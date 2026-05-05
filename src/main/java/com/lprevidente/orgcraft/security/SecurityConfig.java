@@ -1,15 +1,18 @@
 package com.lprevidente.orgcraft.security;
 
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -18,7 +21,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 class SecurityConfig {
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http, AuthHandler authHandler) {
+	SecurityFilterChain securityFilterChain(
+			HttpSecurity http,
+			AuthHandler authHandler,
+			@Qualifier("spiceDbAuthorizationManager")
+					AuthorizationManager<RequestAuthorizationContext> spiceDbAuthorizationManager) {
 		return http
 				.securityMatcher("/**")
 				.csrf(AbstractHttpConfigurer::disable)
@@ -27,6 +34,7 @@ class SecurityConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/v1/teams/{id}").access(spiceDbAuthorizationManager)
 						.anyRequest().authenticated())
 				.build();
 	}
