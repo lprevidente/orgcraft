@@ -1,0 +1,9 @@
+definition user {}
+
+definition team {
+  relation member: user
+  relation admin: user
+
+  permission view = member + admin
+  permission manage = admin
+}
