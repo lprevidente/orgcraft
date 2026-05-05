@@ -21,6 +21,10 @@ spring:
     activate:
       on-profile: test
 
+orgcraft:
+  spicedb:
+    enabled: false
+
 # logging
 logging:
   level:
