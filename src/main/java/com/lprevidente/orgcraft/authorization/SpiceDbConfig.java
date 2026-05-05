@@ -23,7 +23,9 @@ class SpiceDbConfig {
 
   SpiceDbConfig(AuthorizationProperties properties) {
     final var builder = NettyChannelBuilder.forTarget(properties.endpoint());
-    if (properties.plaintext()) builder.usePlaintext();
+    if (properties.plaintext()) {
+      builder.usePlaintext();
+    }
     this.channel = builder.build();
   }
 

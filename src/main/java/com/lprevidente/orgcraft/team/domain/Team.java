@@ -29,7 +29,7 @@ public class Team extends AbstractAggregateRoot<Team> {
     this.name = name;
     this.createdAt = LocalDateTime.now();
 
-    registerEvent(new TeamCreated(this));
+    registerEvent(new TeamCreated(this.id.id()));
   }
 
   @Override
