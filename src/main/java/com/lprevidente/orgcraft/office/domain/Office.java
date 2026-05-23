@@ -1,13 +1,16 @@
 package com.lprevidente.orgcraft.office.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 import java.util.Objects;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 @Getter
@@ -21,6 +24,10 @@ public class Office {
   private String name;
 
   private Address address;
+
+  @TenantId
+  @Column(name = "tenant_id", nullable = false, updatable = false)
+  private @Nullable String tenantId;
 
   public Office(String name, Address address) {
     Assert.notNull(name, "name must not be null");

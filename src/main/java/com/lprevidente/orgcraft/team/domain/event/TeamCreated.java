@@ -1,7 +1,7 @@
 package com.lprevidente.orgcraft.team.domain.event;
 
-import java.util.UUID;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import org.jmolecules.event.annotation.DomainEvent;
 
 @DomainEvent
-public record TeamCreated(UUID teamId) {}
+public record TeamCreated(TeamId id) {}

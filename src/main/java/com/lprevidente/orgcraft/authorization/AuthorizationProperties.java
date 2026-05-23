@@ -4,5 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("orgcraft.spicedb")
 public record AuthorizationProperties(
-    boolean enabled, //
-    String endpoint, String presharedKey, boolean plaintext) {}
+    boolean enabled,
+    String endpoint,
+    String presharedKey,
+    boolean plaintext) {}

@@ -6,7 +6,7 @@ import com.lprevidente.orgcraft.team.application.command.RemoveUserFromTeam;
 import com.lprevidente.orgcraft.team.application.projection.TeamMemberView;
 import com.lprevidente.orgcraft.team.application.handler.AddUserToTeamHandler;
 import com.lprevidente.orgcraft.team.application.handler.RemoveUserFromTeamHandler;
-import com.lprevidente.orgcraft.team.domain.TeamId;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.validation.Valid;
 import java.util.Collection;

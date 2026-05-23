@@ -1,5 +1,6 @@
 package com.lprevidente.orgcraft.team.domain;
 
+import com.lprevidente.orgcraft.team.api.TeamId;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import java.io.Serializable;
@@ -9,7 +10,7 @@ import lombok.NoArgsConstructor;
 import org.jmolecules.ddd.annotation.ValueObject;
 import com.lprevidente.orgcraft.user.api.UserId;
 
-/** Composite ID for TeamMembership consisting of teamId and userId */
+/** Composite ID for TeamMembership consisting of id and userId */
 @Getter
 @ValueObject
 @NoArgsConstructor

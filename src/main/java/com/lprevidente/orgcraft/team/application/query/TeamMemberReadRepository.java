@@ -1,6 +1,6 @@
 package com.lprevidente.orgcraft.team.application.query;
 
-import com.lprevidente.orgcraft.team.domain.TeamId;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.TeamMember;
 import com.lprevidente.orgcraft.team.domain.TeamMemberId;
 import java.util.List;

@@ -2,6 +2,8 @@ package com.lprevidente.orgcraft.user.api;
 
 import com.lprevidente.orgcraft.user.application.query.UserReadRepository;
 import com.lprevidente.orgcraft.user.domain.Email;
+import com.lprevidente.orgcraft.user.domain.Password;
+import com.lprevidente.orgcraft.user.domain.User;
 import com.lprevidente.orgcraft.user.domain.Users;
 import java.util.Collection;
 import java.util.Map;
@@ -38,5 +40,12 @@ class UserApiImpl implements UserApi {
   public <T extends UserIdDto> Map<UUID, T> findAllById(Collection<UUID> ids, Class<T> clazz) {
     return userReadRepository.findAllByIdIn(ids.stream().map(UserId::new).toList(), clazz).stream()
         .collect(Collectors.toMap(t -> t.getId().id(), Function.identity()));
+  }
+
+  @Override
+  public UserId register(String firstName, String lastName, String email, String plainPassword) {
+    final var user = new User(firstName, lastName, Password.create(plainPassword), new Email(email), users);
+    users.save(user);
+    return user.getId();
   }
 }

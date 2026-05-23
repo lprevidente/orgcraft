@@ -1,7 +1,7 @@
 package com.lprevidente.orgcraft.team.application.query;
 
 import com.lprevidente.orgcraft.team.domain.Team;
-import com.lprevidente.orgcraft.team.domain.TeamId;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import java.util.List;
 import org.springframework.data.repository.Repository;
 import org.springframework.transaction.annotation.Transactional;

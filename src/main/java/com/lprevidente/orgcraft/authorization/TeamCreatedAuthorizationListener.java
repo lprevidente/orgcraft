@@ -28,7 +28,7 @@ class TeamCreatedAuthorizationListener {
 
   @ApplicationModuleListener
   void on(TeamCreated event) {
-    final var teamId = event.teamId().toString();
+    final var teamId = event.id().toString();
     final var update =
         RelationshipUpdate.newBuilder()
             .setOperation(RelationshipUpdate.Operation.OPERATION_TOUCH)

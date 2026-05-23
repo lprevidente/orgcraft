@@ -1,8 +1,8 @@
 package com.lprevidente.orgcraft.team.application.handler;
 
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.application.command.CreateTeam;
 import com.lprevidente.orgcraft.team.domain.Team;
-import com.lprevidente.orgcraft.team.domain.TeamId;
 import com.lprevidente.orgcraft.team.domain.Teams;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.architecture.cqrs.CommandHandler;

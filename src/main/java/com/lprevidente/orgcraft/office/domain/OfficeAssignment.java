@@ -8,8 +8,10 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
+import org.jspecify.annotations.Nullable;
 import com.lprevidente.orgcraft.user.api.UserId;
 
 @Getter
@@ -29,6 +31,10 @@ public class OfficeAssignment {
   private Instant assignedAt;
 
   private Instant unassignedAt;
+
+  @TenantId
+  @Column(name = "tenant_id", nullable = false, updatable = false)
+  private @Nullable String tenantId;
 
   public OfficeAssignment(OfficeId officeId, UserId userId) {
     this.id = new OfficeAssignmentId();

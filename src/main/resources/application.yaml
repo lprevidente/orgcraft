@@ -28,7 +28,3 @@ orgcraft:
     endpoint: localhost:50051
     preshared-key: orgcraft-dev-key
     plaintext: true
-
-logging:
-  level:
-    org.springframework.security: TRACE

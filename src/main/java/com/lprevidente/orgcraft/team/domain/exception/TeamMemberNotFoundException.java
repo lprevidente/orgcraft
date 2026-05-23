@@ -3,7 +3,6 @@ package com.lprevidente.orgcraft.team.domain.exception;
 import com.lprevidente.orgcraft.common.exception.DomainException;
 import com.lprevidente.orgcraft.team.domain.TeamMemberId;
 import org.springframework.http.HttpStatus;
-import com.lprevidente.orgcraft.user.api.UserId;
 
 /** Exception thrown when a user cannot be found. */
 public class TeamMemberNotFoundException extends DomainException {

@@ -33,7 +33,7 @@ class SecurityConfig {
 				.exceptionHandling(e -> e.authenticationEntryPoint(authHandler))
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/v1/organizations").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/teams/{id}").access(spiceDbAuthorizationManager)
 						.anyRequest().authenticated())
 				.build();

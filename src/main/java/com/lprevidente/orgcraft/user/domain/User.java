@@ -1,19 +1,30 @@
 package com.lprevidente.orgcraft.user.domain;
 
+import com.lprevidente.orgcraft.user.api.UserId;
 import com.lprevidente.orgcraft.user.domain.exception.EmailAlreadyInUseException;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.Objects;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
-import com.lprevidente.orgcraft.user.api.UserId;
 
 @Getter
 @AggregateRoot
-@Table(name = "users")
+@Table(
+    name = "users",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_users_tenant_email",
+            columnNames = {"tenant_id", "email"}))
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
   @Identity private UserId id;
@@ -24,10 +35,13 @@ public class User {
   @AttributeOverride(name = "hashedValue", column = @Column(name = "password"))
   private Password password;
 
-  @AttributeOverride(name = "value", column = @Column(name = "email", unique = true))
+  @AttributeOverride(name = "value", column = @Column(name = "email"))
   private Email email;
 
-  protected User() {}
+  @Nullable
+  @TenantId
+  @Column(name = "tenant_id", nullable = false, updatable = false)
+  private String tenantId;
 
   public User(String firstName, String lastName, Password password, Email email, Users users) {
     Assert.notNull(firstName, "firstName must not be null");

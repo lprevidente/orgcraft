@@ -1,4 +1,4 @@
-package com.lprevidente.orgcraft.team.domain;
+package com.lprevidente.orgcraft.team.api;
 
 import com.lprevidente.orgcraft.common.identifier.Identifier;
 import java.io.Serializable;

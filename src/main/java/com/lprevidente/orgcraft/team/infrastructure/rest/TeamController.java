@@ -6,7 +6,7 @@ import com.lprevidente.orgcraft.team.application.command.DeleteTeam;
 import com.lprevidente.orgcraft.team.application.projection.TeamView;
 import com.lprevidente.orgcraft.team.application.handler.CreateTeamHandler;
 import com.lprevidente.orgcraft.team.application.handler.DeleteTeamHandler;
-import com.lprevidente.orgcraft.team.domain.TeamId;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import jakarta.validation.Valid;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;

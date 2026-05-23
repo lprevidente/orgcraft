@@ -59,6 +59,33 @@ class SecurityConfigIntegrationTest extends BaseIntegrationTest {
           .assertThat()
           .hasStatusOk();
     }
+
+    @Test
+    @DisplayName("Should require authentication on POST /api/v1/users")
+    void shouldRequireAuthenticationOnCreateUser() {
+      mockMvcTester
+          .post()
+          .uri("/api/v1/users")
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"firstName\":\"X\",\"lastName\":\"Y\",\"email\":\"x@y.com\",\"password\":\"Password@123\"}")
+          .exchange()
+          .assertThat()
+          .hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @DisplayName("Should permit POST /api/v1/organizations without authentication")
+    void shouldPermitRegisterOrganizationWithoutAuthentication() {
+      mockMvcTester
+          .post()
+          .uri("/api/v1/organizations")
+          .contentType(MediaType.APPLICATION_JSON)
+          .content(
+              "{\"name\":\"Unauthed Co\",\"slug\":\"unauthed-co\",\"founderFirstName\":\"U\",\"founderLastName\":\"A\",\"founderEmail\":\"u@a.com\",\"founderPassword\":\"Password@123\"}")
+          .exchange()
+          .assertThat()
+          .hasStatus(HttpStatus.CREATED);
+    }
   }
 
   @Nested

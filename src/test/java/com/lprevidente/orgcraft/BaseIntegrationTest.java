@@ -1,6 +1,9 @@
 package com.lprevidente.orgcraft;
 
 import com.lprevidente.orgcraft.authorization.AuthorizationTestConfig;
+import com.lprevidente.orgcraft.tenancy.TenantContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -15,6 +18,19 @@ import tools.jackson.databind.json.JsonMapper;
 @ActiveProfiles("test")
 @Import(AuthorizationTestConfig.class)
 public abstract class BaseIntegrationTest {
+
+  protected static final String TEST_TENANT = "test-tenant";
+
   @Autowired protected MockMvcTester mockMvcTester;
   @Autowired protected JsonMapper jsonMapper;
+
+  @BeforeEach
+  void setTenantContext() {
+    TenantContext.set(TEST_TENANT);
+  }
+
+  @AfterEach
+  void clearTenantContext() {
+    TenantContext.clear();
+  }
 }

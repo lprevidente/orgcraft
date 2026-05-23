@@ -1,26 +1,35 @@
 package com.lprevidente.orgcraft.team.domain;
 
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.user.api.UserApi;
+import com.lprevidente.orgcraft.user.api.UserId;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
-import com.lprevidente.orgcraft.user.api.UserId;
 
 @Getter
 @AggregateRoot
 @Table(name = "team_members")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TeamMember {
 
   @Identity private TeamMemberId id;
 
   private LocalDateTime joinedAt;
 
-  protected TeamMember() {}
-
+  @TenantId
+  @Column(name = "tenant_id", nullable = false, updatable = false)
+  private @Nullable String tenantId;
+  
   public TeamMember(
       TeamId teamId, //
       UserId userId,

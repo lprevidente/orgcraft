@@ -34,15 +34,16 @@ class SpiceDbAuthorizationManager implements AuthorizationManager<RequestAuthori
   public AuthorizationDecision authorize(
       Supplier<? extends Authentication> authentication, RequestAuthorizationContext context) {
     final var auth = authentication.get();
-    if (auth == null
-        || !auth.isAuthenticated()
+    if (!auth.isAuthenticated()
         || auth instanceof AnonymousAuthenticationToken
         || !(auth.getPrincipal() instanceof UserDetailsView principal)) {
       return new AuthorizationDecision(false);
     }
 
     final var teamId = context.getVariables().get(PATH_VARIABLE_ID);
-    if (teamId == null) return new AuthorizationDecision(false);
+    if (teamId == null) {
+      return new AuthorizationDecision(false);
+    }
 
     final var request =
         CheckPermissionRequest.newBuilder()
