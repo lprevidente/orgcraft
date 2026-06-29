@@ -5,7 +5,7 @@ import com.lprevidente.orgcraft.organization.application.command.RegisterOrganiz
 import com.lprevidente.orgcraft.organization.domain.Organization;
 import com.lprevidente.orgcraft.organization.domain.Organizations;
 import com.lprevidente.orgcraft.organization.domain.Slug;
-import com.lprevidente.orgcraft.tenancy.TenantContext;
+import com.lprevidente.orgcraft.tenancy.api.TenantContext;
 import com.lprevidente.orgcraft.user.api.UserApi;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.architecture.cqrs.CommandHandler;

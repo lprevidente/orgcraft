@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.lprevidente.orgcraft.BaseIntegrationTest;
 import com.lprevidente.orgcraft.organization.application.command.RegisterOrganization;
 import com.lprevidente.orgcraft.organization.application.command.RegisterOrganizationRes;
-import com.lprevidente.orgcraft.tenancy.TenantContext;
+import com.lprevidente.orgcraft.tenancy.api.TenantContext;
 import com.lprevidente.orgcraft.user.api.UserApi;
 import com.lprevidente.orgcraft.user.application.projection.UserView;
 import org.junit.jupiter.api.DisplayName;

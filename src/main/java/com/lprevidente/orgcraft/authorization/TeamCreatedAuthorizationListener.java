@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "orgcraft.spicedb.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "SpiceDBProperties", havingValue = "true")
 class TeamCreatedAuthorizationListener {
 
   private static final String TEAM_RESOURCE = "team";

@@ -1,4 +1,4 @@
-package com.lprevidente.orgcraft.tenancy;
+package com.lprevidente.orgcraft.tenancy.api;
 
 import org.jspecify.annotations.Nullable;
 

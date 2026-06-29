@@ -1,5 +1,6 @@
 package com.lprevidente.orgcraft.tenancy;
 
+import com.lprevidente.orgcraft.tenancy.api.TenantContext;
 import java.util.Map;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;

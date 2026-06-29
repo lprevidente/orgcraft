@@ -16,12 +16,12 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(name = "orgcraft.spicedb.enabled", havingValue = "true")
-@EnableConfigurationProperties(AuthorizationProperties.class)
+@EnableConfigurationProperties(SpiceDbProperties.class)
 class SpiceDbConfig {
 
   private final ManagedChannel channel;
 
-  SpiceDbConfig(AuthorizationProperties properties) {
+  SpiceDbConfig(SpiceDbProperties properties) {
     final var builder = NettyChannelBuilder.forTarget(properties.endpoint());
     if (properties.plaintext()) {
       builder.usePlaintext();
@@ -35,13 +35,13 @@ class SpiceDbConfig {
   }
 
   @Bean
-  PermissionsServiceBlockingStub permissionsService(AuthorizationProperties properties) {
+  PermissionsServiceBlockingStub permissionsService(SpiceDbProperties properties) {
     return PermissionsServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(new BearerToken(properties.presharedKey()));
   }
 
   @Bean
-  SchemaServiceBlockingStub schemaService(AuthorizationProperties properties) {
+  SchemaServiceBlockingStub schemaService(SpiceDbProperties properties) {
     return SchemaServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(new BearerToken(properties.presharedKey()));
   }
