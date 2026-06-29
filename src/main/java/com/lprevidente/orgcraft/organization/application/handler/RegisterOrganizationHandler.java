@@ -6,6 +6,7 @@ import com.lprevidente.orgcraft.organization.domain.Organization;
 import com.lprevidente.orgcraft.organization.domain.Organizations;
 import com.lprevidente.orgcraft.organization.domain.Slug;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
+import com.lprevidente.orgcraft.tenancy.api.TenantId;
 import com.lprevidente.orgcraft.user.api.UserApi;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.architecture.cqrs.CommandHandler;
@@ -25,7 +26,7 @@ public class RegisterOrganizationHandler {
     organizations.save(organization);
 
     try {
-      TenantContext.set(organization.getId().id().toString());
+      TenantContext.set(TenantId.of(organization.getId().id()));
       final var founderId =
           users.register(
               command.founderFirstName(),

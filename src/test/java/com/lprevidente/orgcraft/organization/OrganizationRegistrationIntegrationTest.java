@@ -6,6 +6,7 @@ import com.lprevidente.orgcraft.BaseIntegrationTest;
 import com.lprevidente.orgcraft.organization.application.command.RegisterOrganization;
 import com.lprevidente.orgcraft.organization.application.command.RegisterOrganizationRes;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
+import com.lprevidente.orgcraft.tenancy.api.TenantId;
 import com.lprevidente.orgcraft.user.api.UserApi;
 import com.lprevidente.orgcraft.user.application.projection.UserView;
 import org.junit.jupiter.api.DisplayName;
@@ -43,13 +44,13 @@ class OrganizationRegistrationIntegrationTest extends BaseIntegrationTest {
     assertThat(response.organizationId()).isNotNull();
     assertThat(response.founderId()).isNotNull();
 
-    TenantContext.set(response.organizationId().id().toString());
+    TenantContext.set(TenantId.of(response.organizationId().id()));
     try {
       final var founder = userApi.findByEmail("alice@acme.com", UserView.class);
       assertThat(founder).isPresent();
       assertThat(founder.get().getFirstName()).isEqualTo("Alice");
     } finally {
-      TenantContext.set(TEST_TENANT);
+      TenantContext.set(TEST_TENANT_ID);
     }
   }
 

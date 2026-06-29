@@ -16,7 +16,7 @@ class TenantContextResolver
   @Override
   public String resolveCurrentTenantIdentifier() {
     final var tenantId = TenantContext.get();
-    return tenantId != null ? tenantId : UNSET_TENANT;
+    return tenantId != null ? tenantId.value().toString() : UNSET_TENANT;
   }
 
   @Override

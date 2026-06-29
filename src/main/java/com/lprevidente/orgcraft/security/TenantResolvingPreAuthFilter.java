@@ -2,6 +2,7 @@ package com.lprevidente.orgcraft.security;
 
 import com.lprevidente.orgcraft.organization.api.OrganizationApi;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
+import com.lprevidente.orgcraft.tenancy.api.TenantId;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +33,7 @@ class TenantResolvingPreAuthFilter extends OncePerRequestFilter {
       if (slug != null && !slug.isBlank()) {
         organizations
             .findIdBySlug(slug)
-            .ifPresent(id -> TenantContext.set(id.id().toString()));
+            .ifPresent(id -> TenantContext.set(TenantId.of(id.id())));
       }
     }
     chain.doFilter(request, response);

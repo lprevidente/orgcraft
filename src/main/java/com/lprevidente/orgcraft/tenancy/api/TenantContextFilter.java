@@ -23,7 +23,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
     final var previous = TenantContext.get();
     final var session = request.getSession(false);
     if (session != null) {
-      final var tenantId = (String) session.getAttribute(SESSION_TENANT_ATTRIBUTE);
+      final var tenantId = (TenantId) session.getAttribute(SESSION_TENANT_ATTRIBUTE);
       if (tenantId != null) {
         TenantContext.set(tenantId);
       }
