@@ -8,11 +8,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.jdbc.Sql;
 
-@WithMockUser
-@Sql(value = "/team.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
+// Resolved at TEST_EXECUTION so the @BeforeEach tenant context is set before the tenant-filtered
+// user lookup runs; gives a real UserDetailsView principal whose getId() feeds @AuthenticationPrincipal.
+@WithUserDetails(value = "mario.rossi@example.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+@Sql(
+    value = {"/users.sql", "/team.sql"},
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
 class TeamIntegrationTest extends BaseIntegrationTest {
 
   private static final UUID EXISTING_TEAM_ID_UUID = UUID.fromString("44444444-4444-4444-4444-444444444444");

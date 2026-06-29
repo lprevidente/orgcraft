@@ -1,11 +1,12 @@
 package com.lprevidente.orgcraft.team.domain;
 
+import com.lprevidente.orgcraft.organization.api.OrganizationId;
 import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.event.TeamCreated;
+import com.lprevidente.orgcraft.user.api.UserId;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,9 @@ import org.jmolecules.ddd.annotation.Identity;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.util.Assert;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Getter
 @AggregateRoot
@@ -27,18 +31,26 @@ public class Team extends AbstractAggregateRoot<Team> {
   private String name;
   private LocalDateTime createdAt;
 
+  @AttributeOverride(name = "id", column = @Column(name = "creator_id", nullable = false, updatable = false))
+  private UserId creator;
+
   @TenantId
   @Column(name = "tenant_id", nullable = false, updatable = false)
-  private @Nullable String tenantId;
-  
-  public Team(String name) {
+  private String tenantId;
+
+  public Team(String name, UserId creator, OrganizationId organization) {
     Assert.hasText(name, "name must not be null or empty");
+    Assert.notNull(creator, "creator must not be null");
+    Assert.notNull(organization, "organization must not be null");
 
     this.id = new TeamId();
     this.name = name;
     this.createdAt = LocalDateTime.now();
+    this.creator = creator;
 
-    registerEvent(new TeamCreated(this.id));
+    // organization == tenant; passed explicitly because @TenantId is only set on persist,
+    // and SpiceDB needs it now to wire team -> organization in the published event.
+    registerEvent(new TeamCreated(this.id, creator, organization));
   }
 
   @Override
