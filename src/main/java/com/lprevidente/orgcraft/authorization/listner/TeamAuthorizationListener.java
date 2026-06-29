@@ -1,8 +1,11 @@
 package com.lprevidente.orgcraft.authorization.listner;
 
+import com.authzed.api.v1.DeleteRelationshipsRequest;
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
+import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
 import com.lprevidente.orgcraft.team.domain.event.TeamCreated;
+import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -43,4 +46,20 @@ class TeamAuthorizationListener extends BaseListener {
         creatorId);
   }
 
+  @ApplicationModuleListener
+  void on(TeamDeleted event) {
+    final var teamId = event.id().id().toString();
+
+    // Delete-by-filter removes every tuple where the team is the resource
+    // (organization, creator, admin, member, ...) in one idempotent call.
+    permissionsService.deleteRelationships(
+        DeleteRelationshipsRequest.newBuilder()
+            .setRelationshipFilter(
+                RelationshipFilter.newBuilder()
+                    .setResourceType(TEAM_RESOURCE)
+                    .setOptionalResourceId(teamId))
+            .build());
+
+    log.info("Deleted all SpiceDB relationships for team:{}", teamId);
+  }
 }

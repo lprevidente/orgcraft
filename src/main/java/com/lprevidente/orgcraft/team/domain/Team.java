@@ -3,6 +3,7 @@ package com.lprevidente.orgcraft.team.domain;
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
 import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.event.TeamCreated;
+import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
 import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -51,6 +52,11 @@ public class Team extends AbstractAggregateRoot<Team> {
     // organization == tenant; passed explicitly because @TenantId is only set on persist,
     // and SpiceDB needs it now to wire team -> organization in the published event.
     registerEvent(new TeamCreated(this.id, creator, organization));
+  }
+
+  /** Registers the {@link TeamDeleted} event; call before removing the aggregate via its repository. */
+  public void delete() {
+    registerEvent(new TeamDeleted(this.id));
   }
 
   @Override
