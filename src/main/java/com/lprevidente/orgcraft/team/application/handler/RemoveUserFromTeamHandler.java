@@ -19,6 +19,7 @@ public class RemoveUserFromTeamHandler {
         teamMembers
             .findById(membershipId)
             .orElseThrow(() -> new TeamMemberNotFoundException(membershipId));
+    teamMember.remove();
     teamMembers.delete(teamMember);
   }
 }

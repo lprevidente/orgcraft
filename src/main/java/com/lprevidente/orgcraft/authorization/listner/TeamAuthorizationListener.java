@@ -1,12 +1,11 @@
 package com.lprevidente.orgcraft.authorization.listner;
 
 import com.authzed.api.v1.DeleteRelationshipsRequest;
-import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
+import com.authzed.api.v1.PermissionsServiceGrpc;
 import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
 import com.lprevidente.orgcraft.team.domain.event.TeamCreated;
 import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.modulith.events.ApplicationModuleListener;
@@ -14,17 +13,12 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "orgcraft.spicedb.enabled", havingValue = "true")
 class TeamAuthorizationListener extends BaseListener {
 
-  private static final String TEAM_RESOURCE = "team";
-  private static final String USER_SUBJECT = "user";
-  private static final String ORGANIZATION_SUBJECT = "organization";
-  private static final String CREATOR_RELATION = "creator";
-  private static final String ORGANIZATION_RELATION = "organization";
-
-  private final PermissionsServiceBlockingStub permissionsService;
+  public TeamAuthorizationListener(PermissionsServiceGrpc.PermissionsServiceBlockingStub permissionsService) {
+    super(permissionsService);
+  }
 
   @ApplicationModuleListener
   void on(TeamCreated event) {

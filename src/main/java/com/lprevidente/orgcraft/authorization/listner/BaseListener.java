@@ -1,11 +1,23 @@
 package com.lprevidente.orgcraft.authorization.listner;
 
 import com.authzed.api.v1.ObjectReference;
+import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
 import com.authzed.api.v1.Relationship;
 import com.authzed.api.v1.RelationshipUpdate;
 import com.authzed.api.v1.SubjectReference;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public abstract class BaseListener {
+  protected static final String TEAM_RESOURCE = "team";
+  protected static final String USER_SUBJECT = "user";
+  protected static final String ORGANIZATION_SUBJECT = "organization";
+
+  protected static final String CREATOR_RELATION = "creator";
+  protected static final String ORGANIZATION_RELATION = "organization";
+  protected static final String MEMBER_RELATION = "member";
+
+  protected final PermissionsServiceBlockingStub permissionsService;
 
 
   protected static RelationshipUpdate touch(
@@ -14,8 +26,39 @@ public abstract class BaseListener {
       String relation,
       String subjectType,
       String subjectId) {
+    return update(
+        RelationshipUpdate.Operation.OPERATION_TOUCH,
+        resourceType,
+        resourceId,
+        relation,
+        subjectType,
+        subjectId);
+  }
+
+  protected static RelationshipUpdate delete(
+      String resourceType,
+      String resourceId,
+      String relation,
+      String subjectType,
+      String subjectId) {
+    return update(
+        RelationshipUpdate.Operation.OPERATION_DELETE,
+        resourceType,
+        resourceId,
+        relation,
+        subjectType,
+        subjectId);
+  }
+
+  private static RelationshipUpdate update(
+      RelationshipUpdate.Operation operation,
+      String resourceType,
+      String resourceId,
+      String relation,
+      String subjectType,
+      String subjectId) {
     return RelationshipUpdate.newBuilder()
-        .setOperation(RelationshipUpdate.Operation.OPERATION_TOUCH)
+        .setOperation(operation)
         .setRelationship(Relationship.newBuilder()
             .setResource(ObjectReference.newBuilder().setObjectType(resourceType).setObjectId(resourceId))
             .setRelation(relation)

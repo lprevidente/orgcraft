@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.util.Assert;
 
@@ -29,7 +28,10 @@ public class Team extends AbstractAggregateRoot<Team> {
 
   @Identity private TeamId id;
 
+  @Column(nullable = false)
   private String name;
+
+  @Column(nullable = false, columnDefinition = "timestamp")
   private LocalDateTime createdAt;
 
   @AttributeOverride(name = "id", column = @Column(name = "creator_id", nullable = false, updatable = false))
@@ -54,7 +56,9 @@ public class Team extends AbstractAggregateRoot<Team> {
     registerEvent(new TeamCreated(this.id, creator, organization));
   }
 
-  /** Registers the {@link TeamDeleted} event; call before removing the aggregate via its repository. */
+  /**
+   * Registers the {@link TeamDeleted} event; call before removing the aggregate via its repository.
+   */
   public void delete() {
     registerEvent(new TeamDeleted(this.id));
   }
