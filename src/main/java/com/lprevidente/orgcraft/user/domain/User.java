@@ -1,12 +1,14 @@
 package com.lprevidente.orgcraft.user.domain;
 
 import com.lprevidente.orgcraft.user.api.UserId;
+import com.lprevidente.orgcraft.user.domain.event.UserRegistered;
 import com.lprevidente.orgcraft.user.domain.exception.EmailAlreadyInUseException;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +16,7 @@ import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
 import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.util.Assert;
 
 @Getter
@@ -25,7 +28,7 @@ import org.springframework.util.Assert;
             name = "uk_users_tenant_email",
             columnNames = {"tenant_id", "email"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+public class User extends AbstractAggregateRoot<User> {
 
   @Identity private UserId id;
 
@@ -66,6 +69,15 @@ public class User {
   public void updateDetails(String firstName, String lastName) {
     this.firstName = firstName;
     this.lastName = lastName;
+  }
+
+  /**
+   * Records that this user belongs to the given organization (its tenant); registers {@link
+   * UserRegistered}, published on the next repository {@code save}.
+   */
+  public void assignToOrganization(UUID organizationId) {
+    Assert.notNull(organizationId, "organizationId must not be null");
+    registerEvent(new UserRegistered(organizationId, this.id));
   }
 
   @Override

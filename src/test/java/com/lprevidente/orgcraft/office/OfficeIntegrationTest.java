@@ -9,11 +9,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.jdbc.Sql;
 
-@WithMockUser
-@Sql(value = "/offices.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
+// Create-office now reads @AuthenticationPrincipal(expression = "id"); authenticate as a real user
+// (resolved at TEST_EXECUTION so the tenant context is set first).
+@WithUserDetails(value = "mario.rossi@example.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+@Sql(
+    value = {"/users.sql", "/offices.sql"},
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
 class OfficeIntegrationTest extends BaseIntegrationTest {
 
   private static final UUID EXISTING_OFFICE_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");

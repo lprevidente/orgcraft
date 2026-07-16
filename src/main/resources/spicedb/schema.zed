@@ -2,6 +2,7 @@ definition user {}
 
 definition organization {
   relation admin: user
+  relation member: user
 }
 
 definition team {

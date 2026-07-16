@@ -39,13 +39,13 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-netty-shaded</artifactId>
-      <version>1.73.0</version>
+      <version>1.80.0</version>
     </dependency>
 
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-stub</artifactId>
-      <version>1.73.0</version>
+      <version>1.80.0</version>
     </dependency>
 
     <dependency>
@@ -111,6 +111,13 @@
     <dependency>
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-starter-jpa</artifactId>
+    </dependency>
+
+    <!-- Promoted to compile scope (transitively runtime via starter-jpa) so we can drive the
+         EventPublicationRegistry SPI directly for attempt-capped retry + dead-lettering. -->
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-events-core</artifactId>
     </dependency>
 
     <dependency>

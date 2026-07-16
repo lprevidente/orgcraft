@@ -1,28 +1,124 @@
-### GET request to example server
-GET http://127.0.0.1:8080/api/v1/users
+### ─────────────────────────────────────────────────────────────
+### Orgcraft — end-to-end happy path
+### Run top-to-bottom. Each request feeds ids to the next via {{...}}.
+### The HTTP client keeps the login session cookie automatically,
+### so run #1 and #2 first, then the rest in order.
+### ─────────────────────────────────────────────────────────────
 
-### POSt request to example server
-POST http://127.0.0.1:8080/api/v1/users
+@host = http://127.0.0.1:8080
+@slug = acme
+@founderEmail = al@acme.com
+@founderPassword = Password@123
+
+### 1. Register organization (public, no auth)
+### Creates org + founder user, and writes organization:{id}#admin@user:{founder}
+POST {{host}}/api/v1/organizations
 Content-Type: application/json
 
 {
-  "firstName": "Hello",
-  "lastName": "My Friend",
-  "password": "be@243Fga",
-  "email": "test@email.com"
+  "name": "Acme Inc",
+  "slug": "{{slug}}",
+  "founderFirstName": "Al",
+  "founderLastName": "Founder",
+  "founderEmail": "{{founderEmail}}",
+  "founderPassword": "{{founderPassword}}"
 }
 
-### GET request to example server
-GET http://127.0.0.1:8080/api/v1/users/f47ac10b-58cc-4372-a567-0e02b2c3d479
+> {%
+    client.global.set("orgId", response.body.organizationId);
+    client.global.set("founderId", response.body.founderId);
+    client.log("orgId=" + response.body.organizationId + "  founderId=" + response.body.founderId);
+%}
 
-### GET teams
-GET http://127.0.0.1:8080/api/teams
-
-### GET team members
-GET http://127.0.0.1:8080/api/teams/c81d4e2e-bcf2-11e6-869b-7df92533d2db/members
-
-### Auth
-POST 127.0.0.1:8080/login
+### 2. Login as the founder (tenant = slug). Establishes the session cookie.
+POST {{host}}/login
 Content-Type: application/x-www-form-urlencoded
 
-email=test@email.com&password=be@243Fga
+email={{founderEmail}}&password={{founderPassword}}&tenant={{slug}}
+
+### 3. Create a second user (authenticated)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{
+  "firstName": "Bob",
+  "lastName": "Member",
+  "email": "bobo@acme.com",
+  "password": "Password@123"
+}
+
+> {%
+    client.global.set("userId", response.body.id);
+    client.log("userId=" + response.body.id);
+%}
+
+### 4. Create a team → writes team:{id}#creator@user:{founder} + team:{id}#organization@organization:{org}
+POST {{host}}/api/v1/teams
+Content-Type: application/json
+
+{ "name": "Platform" }
+
+> {%
+    client.global.set("teamId", response.body);
+    client.log("teamId=" + response.body);
+%}
+
+### 5. Add the user to the team → writes team:{id}#member@user:{user}
+POST {{host}}/api/teams/{{teamId}}/members
+Content-Type: application/json
+
+{ "teamId": "{{teamId}}", "userId": "{{userId}}" }
+
+### 6. Create an office → writes office:{id}#creator@user:{founder} + office:{id}#organization@organization:{org}
+POST {{host}}/api/v1/offices
+Content-Type: application/json
+
+{
+  "name": "Rome Office",
+  "address": { "address": "Via Roma 1", "city": "Rome", "country": "Italy" }
+}
+
+> {%
+    client.global.set("officeId", response.body);
+    client.log("officeId=" + response.body);
+%}
+
+### 7. Assign the user to the office → writes office:{id}#occupant@user:{user}
+POST {{host}}/api/v1/offices/{{officeId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{officeId}}", "userId": "{{userId}}" }
+
+### ── Reads ───────────────────────────────────────────────────
+
+### Users
+GET {{host}}/api/v1/users
+
+### Teams
+GET {{host}}/api/v1/teams
+
+### Team members
+GET {{host}}/api/teams/{{teamId}}/members
+
+### Offices
+GET {{host}}/api/v1/offices
+
+### Office members (current occupants)
+GET {{host}}/api/v1/offices/{{officeId}}/members
+
+### User office history
+GET {{host}}/api/v1/users/{{userId}}/office-history
+
+### ── Cleanup (optional — each delete removes the matching SpiceDB tuples) ──
+
+### Remove user from team → deletes team:{id}#member@user:{user}
+DELETE {{host}}/api/teams/{{teamId}}/members/{{userId}}
+
+### Delete team → deletes all team:{id} tuples
+DELETE {{host}}/api/v1/teams/{{teamId}}
+
+### Remove user from office → deletes office:{id}#occupant@user:{user}
+DELETE {{host}}/api/v1/offices/{{officeId}}/members/{{userId}}
+
+### Delete office → deletes all office:{id} tuples
+DELETE {{host}}/api/v1/offices/{{officeId}}

@@ -19,3 +19,16 @@ services:
     ports:
       - '50051:50051'
       - '8443:8443'
+
+  grpcui:
+    image: 'fullstorydev/grpcui:latest'
+    command: >
+      -bind 0.0.0.0
+      -port 8080
+      -plaintext
+      -H 'authorization: Bearer orgcraft-dev-key'
+      spicedb:50051
+    ports:
+      - '8090:8080'
+    depends_on:
+      - spicedb

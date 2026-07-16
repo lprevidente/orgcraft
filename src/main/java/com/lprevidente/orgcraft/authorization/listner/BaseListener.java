@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 public abstract class BaseListener {
   protected static final String TEAM_RESOURCE = "team";
   protected static final String ORGANIZATION_RESOURCE = "organization";
+  protected static final String OFFICE_RESOURCE = "office";
   protected static final String USER_SUBJECT = "user";
   protected static final String ORGANIZATION_SUBJECT = "organization";
 
@@ -18,6 +19,7 @@ public abstract class BaseListener {
   protected static final String ORGANIZATION_RELATION = "organization";
   protected static final String MEMBER_RELATION = "member";
   protected static final String ADMIN_RELATION = "admin";
+  protected static final String OCCUPANT_RELATION = "occupant";
 
   protected final PermissionsServiceBlockingStub permissionsService;
 

@@ -1,0 +1,58 @@
+package com.lprevidente.orgcraft.authorization.listner;
+
+import com.authzed.api.v1.DeleteRelationshipsRequest;
+import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
+import com.authzed.api.v1.RelationshipFilter;
+import com.authzed.api.v1.WriteRelationshipsRequest;
+import com.lprevidente.orgcraft.office.domain.event.OfficeCreated;
+import com.lprevidente.orgcraft.office.domain.event.OfficeDeleted;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.modulith.events.ApplicationModuleListener;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@ConditionalOnProperty(name = "orgcraft.spicedb.enabled", havingValue = "true")
+class OfficeAuthorizationListener extends BaseListener {
+
+  public OfficeAuthorizationListener(PermissionsServiceBlockingStub permissionsService) {
+    super(permissionsService);
+  }
+
+  @ApplicationModuleListener
+  void on(OfficeCreated event) {
+    final var officeId = event.officeId().toString();
+    final var creatorId = event.creator().id().toString();
+    final var orgId = event.organization().id().toString();
+
+    permissionsService.writeRelationships(
+        WriteRelationshipsRequest.newBuilder()
+            .addUpdates(
+                touch(OFFICE_RESOURCE, officeId, ORGANIZATION_RELATION, ORGANIZATION_SUBJECT, orgId))
+            .addUpdates(touch(OFFICE_RESOURCE, officeId, CREATOR_RELATION, USER_SUBJECT, creatorId))
+            .build());
+
+    log.info(
+        "Wrote SpiceDB tuples office:{}#organization@organization:{}, office:{}#creator@user:{}",
+        officeId,
+        orgId,
+        officeId,
+        creatorId);
+  }
+
+  @ApplicationModuleListener
+  void on(OfficeDeleted event) {
+    final var officeId = event.officeId().toString();
+
+    permissionsService.deleteRelationships(
+        DeleteRelationshipsRequest.newBuilder()
+            .setRelationshipFilter(
+                RelationshipFilter.newBuilder()
+                    .setResourceType(OFFICE_RESOURCE)
+                    .setOptionalResourceId(officeId))
+            .build());
+
+    log.info("Deleted all SpiceDB relationships for office:{}", officeId);
+  }
+}

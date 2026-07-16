@@ -18,6 +18,7 @@ public class DeleteOfficeHandler {
         offices
             .findById(command.id())
             .orElseThrow(() -> new OfficeNotFoundException(command.id()));
+    office.delete();
     offices.delete(office);
   }
 }

@@ -7,10 +7,12 @@ import com.lprevidente.orgcraft.office.application.handler.DeleteOfficeHandler;
 import com.lprevidente.orgcraft.office.application.projection.OfficeView;
 import com.lprevidente.orgcraft.office.application.query.OfficeQueryService;
 import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.validation.Valid;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,8 +35,10 @@ class OfficeController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  OfficeId createOffice(@RequestBody @Valid CreateOffice command) {
-    return createOfficeHandler.handle(command);
+  OfficeId createOffice(
+      @RequestBody @Valid CreateOffice command,
+      @AuthenticationPrincipal(expression = "id") UserId creator) {
+    return createOfficeHandler.handle(command, creator);
   }
 
   @DeleteMapping("{id}")

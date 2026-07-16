@@ -12,13 +12,16 @@ import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
 import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.AbstractAggregateRoot;
+import com.lprevidente.orgcraft.office.domain.event.AssignedUserToOffice;
+import com.lprevidente.orgcraft.office.domain.event.UnassignedUserFromOffice;
 import com.lprevidente.orgcraft.user.api.UserId;
 
 @Getter
 @AggregateRoot
 @Table(name = "office_assignments")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OfficeAssignment {
+public class OfficeAssignment extends AbstractAggregateRoot<OfficeAssignment> {
 
   @Identity private OfficeAssignmentId id;
 
@@ -41,10 +44,13 @@ public class OfficeAssignment {
     this.officeId = officeId;
     this.userId = userId;
     this.assignedAt = Instant.now();
+
+    registerEvent(new AssignedUserToOffice(officeId.id(), userId));
   }
 
   public void unassign() {
     this.unassignedAt = Instant.now();
+    registerEvent(new UnassignedUserFromOffice(officeId.id(), userId));
   }
 
   @Override

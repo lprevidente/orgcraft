@@ -22,11 +22,18 @@ class OrganizationAuthorizationListener extends BaseListener {
     final var orgId = event.id().id().toString();
     final var founderId = event.founder().id().toString();
 
+    // Founder is both an admin and a member of the organization.
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
             .addUpdates(touch(ORGANIZATION_RESOURCE, orgId, ADMIN_RELATION, USER_SUBJECT, founderId))
+            .addUpdates(touch(ORGANIZATION_RESOURCE, orgId, MEMBER_RELATION, USER_SUBJECT, founderId))
             .build());
 
-    log.info("Wrote SpiceDB tuple organization:{}#admin@user:{}", orgId, founderId);
+    log.info(
+        "Wrote SpiceDB tuples organization:{}#admin@user:{}, organization:{}#member@user:{}",
+        orgId,
+        founderId,
+        orgId,
+        founderId);
   }
 }
