@@ -8,6 +8,7 @@ import com.lprevidente.orgcraft.organization.domain.Slug;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
 import com.lprevidente.orgcraft.tenancy.api.TenantId;
 import com.lprevidente.orgcraft.user.api.UserApi;
+import com.lprevidente.orgcraft.user.api.UserId;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.architecture.cqrs.CommandHandler;
 import org.jmolecules.ddd.annotation.Service;
@@ -21,22 +22,22 @@ public class RegisterOrganizationHandler {
 
   @CommandHandler
   public RegisterOrganizationRes handle(RegisterOrganization command) {
+    // Pre-allocate the founder id so it can be an intrinsic part of the Organization aggregate;
+    // the founder user is then created under the new org's tenant with that same id.
+    final var founderId = new UserId();
     final var organization =
-        new Organization(command.name(), new Slug(command.slug()), organizations);
-    organizations.save(organization);
+        new Organization(command.name(), new Slug(command.slug()), founderId, organizations);
 
     try {
       TenantContext.set(TenantId.of(organization.getId().id()));
-      final var founderId =
-          users.register(
-              command.founderFirstName(),
-              command.founderLastName(),
-              command.founderEmail(),
-              command.founderPassword());
+      users.register(
+          founderId,
+          command.founderFirstName(),
+          command.founderLastName(),
+          command.founderEmail(),
+          command.founderPassword());
+      organizations.save(organization);
       return new RegisterOrganizationRes(organization.getId(), founderId);
-    } catch (RuntimeException e) {
-      organizations.deleteById(organization.getId());
-      throw e;
     } finally {
       TenantContext.clear();
     }

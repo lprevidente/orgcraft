@@ -15,6 +15,7 @@ services:
     environment:
       - 'SPICEDB_GRPC_PRESHARED_KEY=orgcraft-dev-key'
       - 'SPICEDB_DATASTORE_ENGINE=memory'
+      - 'SPICEDB_HTTP_ENABLED=true'
     ports:
       - '50051:50051'
       - '8443:8443'

@@ -17,5 +17,5 @@ public interface UserApi {
 
   <T extends UserIdDto> Map<UUID, T> findAllById(Collection<UUID> ids, Class<T> clazz);
 
-  UserId register(String firstName, String lastName, String email, String plainPassword);
+  void register(UserId id, String firstName, String lastName, String email, String plainPassword);
 }

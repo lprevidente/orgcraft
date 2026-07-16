@@ -44,13 +44,19 @@ public class User {
   private String tenantId;
 
   public User(String firstName, String lastName, Password password, Email email, Users users) {
+    this(new UserId(), firstName, lastName, password, email, users);
+  }
+
+  public User(
+      UserId id, String firstName, String lastName, Password password, Email email, Users users) {
+    Assert.notNull(id, "id must not be null");
     Assert.notNull(firstName, "firstName must not be null");
     Assert.notNull(lastName, "lastName must not be null");
     Assert.notNull(email, "email must not be null");
     Assert.notNull(password, "password must not be null");
     if (users.existsByEmail(email)) throw new EmailAlreadyInUseException(email);
 
-    this.id = new UserId();
+    this.id = id;
     this.firstName = firstName;
     this.lastName = lastName;
     this.password = password;

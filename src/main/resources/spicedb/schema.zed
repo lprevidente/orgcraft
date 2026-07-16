@@ -9,16 +9,10 @@ definition team {
   relation creator: user
   relation admin: user
   relation member: user
-
-  permission view   = member + admin + creator + organization->admin
-  permission manage = admin + creator + organization->admin
 }
 
 definition office {
   relation organization: organization
   relation creator: user
   relation occupant: user
-
-  permission view   = occupant + creator + organization->admin
-  permission manage = creator + organization->admin
 }

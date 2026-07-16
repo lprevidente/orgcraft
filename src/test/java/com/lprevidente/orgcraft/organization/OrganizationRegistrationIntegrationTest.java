@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.lprevidente.orgcraft.BaseIntegrationTest;
 import com.lprevidente.orgcraft.organization.application.command.RegisterOrganization;
 import com.lprevidente.orgcraft.organization.application.command.RegisterOrganizationRes;
+import com.lprevidente.orgcraft.organization.domain.event.OrganizationCreated;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
 import com.lprevidente.orgcraft.tenancy.api.TenantId;
 import com.lprevidente.orgcraft.user.api.UserApi;
@@ -14,7 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
+@RecordApplicationEvents
 @DisplayName("POST /api/v1/organizations")
 class OrganizationRegistrationIntegrationTest extends BaseIntegrationTest {
 
@@ -22,7 +26,7 @@ class OrganizationRegistrationIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @DisplayName("Should register organization and founder atomically")
-  void shouldRegisterOrganizationAndFounder() {
+  void shouldRegisterOrganizationAndFounder(ApplicationEvents events) {
     final var command =
         new RegisterOrganization(
             "Acme Inc", "acme", "Alice", "Founder", "alice@acme.com", "Password@123");
@@ -43,6 +47,14 @@ class OrganizationRegistrationIntegrationTest extends BaseIntegrationTest {
 
     assertThat(response.organizationId()).isNotNull();
     assertThat(response.founderId()).isNotNull();
+
+    assertThat(events.stream(OrganizationCreated.class))
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.id()).isEqualTo(response.organizationId());
+              assertThat(e.founder()).isEqualTo(response.founderId());
+            });
 
     TenantContext.set(TenantId.of(response.organizationId().id()));
     try {

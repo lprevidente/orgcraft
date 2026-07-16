@@ -5,14 +5,15 @@ import com.lprevidente.orgcraft.user.domain.Email;
 import com.lprevidente.orgcraft.user.domain.Password;
 import com.lprevidente.orgcraft.user.domain.User;
 import com.lprevidente.orgcraft.user.domain.Users;
+import lombok.RequiredArgsConstructor;
+import org.jmolecules.ddd.annotation.Service;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import org.jmolecules.ddd.annotation.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -38,14 +39,14 @@ class UserApiImpl implements UserApi {
 
   @Override
   public <T extends UserIdDto> Map<UUID, T> findAllById(Collection<UUID> ids, Class<T> clazz) {
-    return userReadRepository.findAllByIdIn(ids.stream().map(UserId::new).toList(), clazz).stream()
+    return userReadRepository.findAllByIdIn(ids.stream().map(UserId::new).toList(), clazz)
+        .stream()
         .collect(Collectors.toMap(t -> t.getId().id(), Function.identity()));
   }
 
   @Override
-  public UserId register(String firstName, String lastName, String email, String plainPassword) {
-    final var user = new User(firstName, lastName, Password.create(plainPassword), new Email(email), users);
+  public void register(UserId id, String firstName, String lastName, String email, String plainPassword) {
+    final var user = new User(id, firstName, lastName, Password.create(plainPassword), new Email(email), users);
     users.save(user);
-    return user.getId();
   }
 }
