@@ -1,7 +1,7 @@
 package com.lprevidente.orgcraft.office.application.query;
 
 import com.lprevidente.orgcraft.office.application.projection.OfficeView;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.exception.OfficeNotFoundException;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;

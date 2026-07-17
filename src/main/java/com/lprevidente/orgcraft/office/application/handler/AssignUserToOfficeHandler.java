@@ -4,7 +4,7 @@ import com.lprevidente.orgcraft.office.application.command.AssignUserToOffice;
 import com.lprevidente.orgcraft.office.domain.OfficeAssignment;
 import com.lprevidente.orgcraft.office.domain.OfficeAssignmentId;
 import com.lprevidente.orgcraft.office.domain.OfficeAssignments;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.Offices;
 import com.lprevidente.orgcraft.user.api.UserId;
 import com.lprevidente.orgcraft.office.domain.exception.OfficeNotFoundException;

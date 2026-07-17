@@ -1,7 +1,7 @@
 package com.lprevidente.orgcraft.office.application.query;
 
 import com.lprevidente.orgcraft.office.domain.Office;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.Repository;

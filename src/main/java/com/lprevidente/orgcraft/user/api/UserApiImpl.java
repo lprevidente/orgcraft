@@ -49,4 +49,9 @@ class UserApiImpl implements UserApi {
     final var user = new User(id, firstName, lastName, Password.create(plainPassword), new Email(email), users);
     users.save(user);
   }
+
+  @Override
+  public void deleteAllInCurrentTenant() {
+    users.deleteAll(users.findAll());
+  }
 }

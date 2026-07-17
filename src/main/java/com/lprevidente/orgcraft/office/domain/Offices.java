@@ -1,5 +1,6 @@
 package com.lprevidente.orgcraft.office.domain;
 
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.user.api.UserId;
 import java.util.List;
 import org.jmolecules.ddd.annotation.Repository;

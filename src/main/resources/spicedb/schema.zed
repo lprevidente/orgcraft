@@ -15,5 +15,6 @@ definition team {
 definition office {
   relation organization: organization
   relation creator: user
+  relation admin: user
   relation occupant: user
 }

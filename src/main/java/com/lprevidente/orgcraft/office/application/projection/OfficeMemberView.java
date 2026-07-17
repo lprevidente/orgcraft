@@ -9,4 +9,6 @@ public interface OfficeMemberView {
   UserId getUserId();
 
   Instant getAssignedAt();
+
+  boolean isAdmin();
 }

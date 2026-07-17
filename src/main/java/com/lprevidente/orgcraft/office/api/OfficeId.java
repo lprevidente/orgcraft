@@ -1,11 +1,10 @@
-package com.lprevidente.orgcraft.office.domain;
+package com.lprevidente.orgcraft.office.api;
 
 import com.lprevidente.orgcraft.common.identifier.Identifier;
-import org.jmolecules.ddd.annotation.ValueObject;
-import org.springframework.util.Assert;
-
 import java.io.Serializable;
 import java.util.UUID;
+import org.jmolecules.ddd.annotation.ValueObject;
+import org.springframework.util.Assert;
 
 @ValueObject
 public record OfficeId(UUID id) implements Serializable, Identifier {

@@ -2,7 +2,7 @@ package com.lprevidente.orgcraft.office.application.handler;
 
 import com.lprevidente.orgcraft.office.application.command.CreateOffice;
 import com.lprevidente.orgcraft.office.domain.Office;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.Offices;
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;

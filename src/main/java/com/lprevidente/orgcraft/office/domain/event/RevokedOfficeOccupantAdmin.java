@@ -5,4 +5,4 @@ import com.lprevidente.orgcraft.user.api.UserId;
 import org.jmolecules.event.annotation.DomainEvent;
 
 @DomainEvent
-public record AssignedUserToOffice(OfficeId officeId, UserId userId) {}
+public record RevokedOfficeOccupantAdmin(OfficeId officeId, UserId userId) {}

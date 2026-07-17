@@ -8,12 +8,16 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.AbstractAggregateRoot;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.event.AssignedUserToOffice;
+import com.lprevidente.orgcraft.office.domain.event.PromotedOfficeOccupantToAdmin;
+import com.lprevidente.orgcraft.office.domain.event.RevokedOfficeOccupantAdmin;
 import com.lprevidente.orgcraft.office.domain.event.UnassignedUserFromOffice;
 import com.lprevidente.orgcraft.user.api.UserId;
 
@@ -35,6 +39,10 @@ public class OfficeAssignment extends AbstractAggregateRoot<OfficeAssignment> {
 
   private Instant unassignedAt;
 
+  @ColumnDefault("false")
+  @Column(nullable = false)
+  private boolean admin;
+
   @TenantId
   @Column(name = "tenant_id", nullable = false, updatable = false)
   private @Nullable String tenantId;
@@ -45,12 +53,24 @@ public class OfficeAssignment extends AbstractAggregateRoot<OfficeAssignment> {
     this.userId = userId;
     this.assignedAt = Instant.now();
 
-    registerEvent(new AssignedUserToOffice(officeId.id(), userId));
+    registerEvent(new AssignedUserToOffice(officeId, userId));
   }
 
   public void unassign() {
     this.unassignedAt = Instant.now();
-    registerEvent(new UnassignedUserFromOffice(officeId.id(), userId));
+    registerEvent(new UnassignedUserFromOffice(officeId, userId));
+  }
+
+  public void promoteToAdmin() {
+    if (admin) return;
+    this.admin = true;
+    registerEvent(new PromotedOfficeOccupantToAdmin(officeId, userId));
+  }
+
+  public void revokeAdmin() {
+    if (!admin) return;
+    this.admin = false;
+    registerEvent(new RevokedOfficeOccupantAdmin(officeId, userId));
   }
 
   @Override

@@ -1,8 +1,11 @@
 package com.lprevidente.orgcraft.authorization.listner;
 
+import com.authzed.api.v1.DeleteRelationshipsRequest;
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
+import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
 import com.lprevidente.orgcraft.organization.domain.event.OrganizationCreated;
+import com.lprevidente.orgcraft.organization.domain.event.OrganizationDeleted;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.modulith.events.ApplicationModuleListener;
@@ -35,5 +38,22 @@ class OrganizationAuthorizationListener extends BaseListener {
         founderId,
         orgId,
         founderId);
+  }
+
+  @ApplicationModuleListener
+  void on(OrganizationDeleted event) {
+    final var orgId = event.id().id().toString();
+
+    // Removes the org's own tuples (admin/member). Teams and offices under it are wiped by their
+    // own TeamDeleted/OfficeDeleted events raised during the cascade.
+    permissionsService.deleteRelationships(
+        DeleteRelationshipsRequest.newBuilder()
+            .setRelationshipFilter(
+                RelationshipFilter.newBuilder()
+                    .setResourceType(ORGANIZATION_RESOURCE)
+                    .setOptionalResourceId(orgId))
+            .build());
+
+    log.info("Deleted all SpiceDB relationships for organization:{}", orgId);
   }
 }

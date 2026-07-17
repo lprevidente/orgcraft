@@ -22,7 +22,7 @@ class OfficeAuthorizationListener extends BaseListener {
 
   @ApplicationModuleListener
   void on(OfficeCreated event) {
-    final var officeId = event.officeId().toString();
+    final var officeId = event.officeId().id().toString();
     final var creatorId = event.creator().id().toString();
     final var orgId = event.organization().id().toString();
 
@@ -43,7 +43,7 @@ class OfficeAuthorizationListener extends BaseListener {
 
   @ApplicationModuleListener
   void on(OfficeDeleted event) {
-    final var officeId = event.officeId().toString();
+    final var officeId = event.officeId().id().toString();
 
     permissionsService.deleteRelationships(
         DeleteRelationshipsRequest.newBuilder()

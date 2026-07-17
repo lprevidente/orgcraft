@@ -2,6 +2,7 @@ package com.lprevidente.orgcraft.organization.domain;
 
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
 import com.lprevidente.orgcraft.organization.domain.event.OrganizationCreated;
+import com.lprevidente.orgcraft.organization.domain.event.OrganizationDeleted;
 import com.lprevidente.orgcraft.organization.domain.exception.SlugAlreadyInUseException;
 import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.persistence.AttributeOverride;
@@ -48,6 +49,11 @@ public class Organization extends AbstractAggregateRoot<Organization> {
     this.createdAt = LocalDateTime.now();
 
     registerEvent(new OrganizationCreated(this.id, founder));
+  }
+
+  /** Registers the {@link OrganizationDeleted} event; call before removing the aggregate. */
+  public void delete() {
+    registerEvent(new OrganizationDeleted(this.id));
   }
 
   @Override

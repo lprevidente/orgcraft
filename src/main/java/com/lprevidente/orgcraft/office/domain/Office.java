@@ -1,5 +1,6 @@
 package com.lprevidente.orgcraft.office.domain;
 
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.event.OfficeCreated;
 import com.lprevidente.orgcraft.office.domain.event.OfficeDeleted;
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
@@ -49,12 +50,12 @@ public class Office extends AbstractAggregateRoot<Office> {
     this.creator = creator;
 
     // organization == tenant; passed explicitly (like Team) so the event can wire office -> org.
-    registerEvent(new OfficeCreated(this.id.id(), creator, organization));
+    registerEvent(new OfficeCreated(this.id, creator, organization));
   }
 
   /** Registers the {@link OfficeDeleted} event; call before removing the aggregate. */
   public void delete() {
-    registerEvent(new OfficeDeleted(this.id.id()));
+    registerEvent(new OfficeDeleted(this.id));
   }
 
   /** Orphans the creator (nulls it) when the creator's user account is deleted; the office survives. */

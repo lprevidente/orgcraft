@@ -6,7 +6,7 @@ import com.lprevidente.orgcraft.office.application.handler.CreateOfficeHandler;
 import com.lprevidente.orgcraft.office.application.handler.DeleteOfficeHandler;
 import com.lprevidente.orgcraft.office.application.projection.OfficeView;
 import com.lprevidente.orgcraft.office.application.query.OfficeQueryService;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.validation.Valid;
 import java.util.Collection;

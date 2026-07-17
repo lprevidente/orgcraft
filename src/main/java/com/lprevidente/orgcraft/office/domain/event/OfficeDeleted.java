@@ -1,7 +1,7 @@
 package com.lprevidente.orgcraft.office.domain.event;
 
-import java.util.UUID;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import org.jmolecules.event.annotation.DomainEvent;
 
 @DomainEvent
-public record OfficeDeleted(UUID officeId) {}
+public record OfficeDeleted(OfficeId officeId) {}

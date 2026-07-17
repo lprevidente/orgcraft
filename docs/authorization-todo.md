@@ -10,7 +10,7 @@ deliberately deferred.
 user {}
 organization { admin: user; member: user }
 team   { organization: organization; creator: user; admin: user; member: user }
-office { organization: organization; creator: user; occupant: user }
+office { organization: organization; creator: user; admin: user; occupant: user }
 ```
 
 ## Populated today (write-side listeners)
@@ -24,34 +24,25 @@ office { organization: organization; creator: user; occupant: user }
 - [x] whole `team:{id}` wiped — on team delete
 - [x] `office#organization`, `office#creator` — on office create
 - [x] `office#occupant` — on assign (deleted on unassign / re-assign move)
+- [x] `office#admin` — on promote occupant to admin (deleted on revoke / unassign); many admins
+      per office allowed
 - [x] whole `office:{id}` wiped — on office delete
 - [x] every tuple with `user:{id}` as subject deleted — on user delete (`UserDeleted`,
       subject-filter delete per resource type). DB side: memberships/assignments removed and
       `team`/`office` `creator` orphaned (nulled, not cascade-deleted) by synchronous listeners.
+- [x] whole `organization:{id}` wiped — on org delete (`OrganizationDeleted`), which also cascades:
+      team/office modules delete their aggregates (each raising `TeamDeleted`/`OfficeDeleted` so the
+      per-resource wipes fire) and the org's users are deleted via `UserApi`.
 
 ---
 
 ## Missing / open
 
-### Model completeness
-
-- [ ] **`office` has no `admin` relation** while `team` does. Decide whether offices need admins
-      (asymmetry is currently intentional-by-default).
-- [ ] **No "leave organization" / remove-org-member path.** `organization#member` is now removed
-      on user deletion (subject-filter delete), but there is still no way to *leave*/move orgs while
-      keeping the account. Add if that becomes a requirement.
-- [ ] **Organization deletion cleanup.** No delete-org flow exists today; if added, it must wipe
-      the org's tuples *and* cascade to all teams/offices/members under it.
-
 ### Deferred by choice (parked, not bugs)
 
+- [ ] **Who may promote/manage admins is not enforced.** Any authenticated caller can promote or
+      revoke a team/office admin (and delete an organization). Gate these once the check side lands.
 - [ ] **Permissions not defined.** Schema is relations-only; `view`/`manage` permission
       definitions were removed on purpose. Re-add when ready to enforce.
 - [ ] **Check side not wired.** No `checkPermission` / `AuthorizationManager`; endpoints are
       just `.authenticated()`. Reinstate a SpiceDB `AuthorizationManager` + `.access(...)` later.
-
-### Nice-to-have / consistency
-
-- [ ] **`OfficeId` not in a named interface.** Office events carry the office id as a raw `UUID`
-      (because `OfficeId` lives in `office.domain`, not an `api` package). Optionally move it to
-      `office/api` to make the events typed, mirroring `team.api.TeamId`.

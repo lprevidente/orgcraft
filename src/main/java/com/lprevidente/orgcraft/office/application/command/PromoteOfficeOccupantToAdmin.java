@@ -1,8 +1,8 @@
 package com.lprevidente.orgcraft.office.application.command;
 
-import com.lprevidente.orgcraft.office.api.OfficeId;
 import jakarta.validation.constraints.NotNull;
+import java.util.UUID;
 import org.jmolecules.architecture.cqrs.Command;
 
 @Command
-public record DeleteOffice(@NotNull OfficeId id) {}
+public record PromoteOfficeOccupantToAdmin(@NotNull UUID officeId, @NotNull UUID userId) {}

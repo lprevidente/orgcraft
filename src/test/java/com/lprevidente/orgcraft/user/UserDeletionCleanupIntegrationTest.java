@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.lprevidente.orgcraft.BaseIntegrationTest;
 import com.lprevidente.orgcraft.office.domain.OfficeAssignments;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.Offices;
 import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.TeamMembers;

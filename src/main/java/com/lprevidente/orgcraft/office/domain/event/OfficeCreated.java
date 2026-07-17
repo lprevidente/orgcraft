@@ -1,9 +1,9 @@
 package com.lprevidente.orgcraft.office.domain.event;
 
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
 import com.lprevidente.orgcraft.user.api.UserId;
-import java.util.UUID;
 import org.jmolecules.event.annotation.DomainEvent;
 
 @DomainEvent
-public record OfficeCreated(UUID officeId, UserId creator, OrganizationId organization) {}
+public record OfficeCreated(OfficeId officeId, UserId creator, OrganizationId organization) {}
