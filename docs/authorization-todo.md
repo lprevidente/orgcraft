@@ -23,25 +23,13 @@ office { organization: organization; creator: user; occupant: user }
 - [x] `office#organization`, `office#creator` — on office create
 - [x] `office#occupant` — on assign (deleted on unassign / re-assign move)
 - [x] whole `office:{id}` wiped — on office delete
+- [x] every tuple with `user:{id}` as subject deleted — on user delete (`UserDeleted`,
+      subject-filter delete per resource type). DB side: memberships/assignments removed and
+      `team`/`office` `creator` orphaned (nulled, not cascade-deleted) by synchronous listeners.
 
 ---
 
 ## Missing / open
-
-### Correctness — sync gaps (do first)
-
-- [ ] **User deletion leaves orphan tuples.** `DeleteUserHandler` emits nothing, so every
-      tuple where the user is the *subject* survives (`organization#admin|member`,
-      `team#creator|member`, `office#creator|occupant`).
-  - [ ] Add `UserDeleted(userId)` domain event (raised from `User` before delete).
-  - [ ] Listener deletes **by subject** — one `DeleteRelationships` call per resource type
-        (`organization`, `team`, `office`) with a subject filter `user:{id}`.
-  - [ ] **Decide the creator-orphaning question first:** what happens to a team/office whose
-        `creator` is the deleted user? (block delete while they own resources / reassign /
-        soft-delete the user). Don't just wipe the `creator` edge blindly.
-
-- [ ] **Backfill for pre-existing data.** Listeners only fire on new writes; any rows created
-      before the integration aren't in SpiceDB. One-time backfill job (behind a flag) if needed.
 
 ### Model completeness
 
@@ -49,8 +37,9 @@ office { organization: organization; creator: user; occupant: user }
       admin" (command + event + listener) or drop the relation from the schema.
 - [ ] **`office` has no `admin` relation** while `team` does. Decide whether offices need admins
       (asymmetry is currently intentional-by-default).
-- [ ] **No "leave organization" / remove-org-member path.** `organization#member` is only ever
-      removed via user deletion (itself missing). Add if users can leave or move orgs.
+- [ ] **No "leave organization" / remove-org-member path.** `organization#member` is now removed
+      on user deletion (subject-filter delete), but there is still no way to *leave*/move orgs while
+      keeping the account. Add if that becomes a requirement.
 - [ ] **Organization deletion cleanup.** No delete-org flow exists today; if added, it must wipe
       the org's tuples *and* cascade to all teams/offices/members under it.
 

@@ -2,6 +2,7 @@ package com.lprevidente.orgcraft.authorization.listner;
 
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
 import com.authzed.api.v1.WriteRelationshipsRequest;
+import com.lprevidente.orgcraft.user.domain.event.UserDeleted;
 import com.lprevidente.orgcraft.user.domain.event.UserRegistered;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,5 +29,18 @@ class UserAuthorizationListener extends BaseListener {
             .build());
 
     log.info("Wrote SpiceDB tuple organization:{}#member@user:{}", orgId, userId);
+  }
+
+  @ApplicationModuleListener
+  void on(UserDeleted event) {
+    final var userId = event.userId().id().toString();
+
+    // Evict the user as a subject from every resource type (one resource-scoped call each).
+    permissionsService.deleteRelationships(
+        deleteBySubject(ORGANIZATION_RESOURCE, USER_SUBJECT, userId));
+    permissionsService.deleteRelationships(deleteBySubject(TEAM_RESOURCE, USER_SUBJECT, userId));
+    permissionsService.deleteRelationships(deleteBySubject(OFFICE_RESOURCE, USER_SUBJECT, userId));
+
+    log.info("Deleted all SpiceDB relationships where user:{} is the subject", userId);
   }
 }

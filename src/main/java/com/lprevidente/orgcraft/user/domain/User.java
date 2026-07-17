@@ -1,6 +1,7 @@
 package com.lprevidente.orgcraft.user.domain;
 
 import com.lprevidente.orgcraft.user.api.UserId;
+import com.lprevidente.orgcraft.user.domain.event.UserDeleted;
 import com.lprevidente.orgcraft.user.domain.event.UserRegistered;
 import com.lprevidente.orgcraft.user.domain.exception.EmailAlreadyInUseException;
 import jakarta.persistence.AttributeOverride;
@@ -69,6 +70,11 @@ public class User extends AbstractAggregateRoot<User> {
   public void updateDetails(String firstName, String lastName) {
     this.firstName = firstName;
     this.lastName = lastName;
+  }
+
+  /** Registers the {@link UserDeleted} event; call before removing the aggregate via its repository. */
+  public void delete() {
+    registerEvent(new UserDeleted(this.id));
   }
 
   /**

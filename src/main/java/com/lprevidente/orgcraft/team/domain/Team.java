@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.util.Assert;
 
@@ -34,7 +35,8 @@ public class Team extends AbstractAggregateRoot<Team> {
   @Column(nullable = false, columnDefinition = "timestamp")
   private LocalDateTime createdAt;
 
-  @AttributeOverride(name = "id", column = @Column(name = "creator_id", nullable = false, updatable = false))
+  @Nullable
+  @AttributeOverride(name = "id", column = @Column(name = "creator_id"))
   private UserId creator;
 
   @TenantId
@@ -61,6 +63,11 @@ public class Team extends AbstractAggregateRoot<Team> {
    */
   public void delete() {
     registerEvent(new TeamDeleted(this.id));
+  }
+
+  /** Orphans the creator (nulls it) when the creator's user account is deleted; the team survives. */
+  public void removeCreator() {
+    this.creator = null;
   }
 
   @Override

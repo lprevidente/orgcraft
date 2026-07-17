@@ -30,7 +30,8 @@ public class Office extends AbstractAggregateRoot<Office> {
 
   private Address address;
 
-  @AttributeOverride(name = "id", column = @Column(name = "creator_id", nullable = false, updatable = false))
+  @Nullable
+  @AttributeOverride(name = "id", column = @Column(name = "creator_id"))
   private UserId creator;
 
   @TenantId
@@ -54,6 +55,11 @@ public class Office extends AbstractAggregateRoot<Office> {
   /** Registers the {@link OfficeDeleted} event; call before removing the aggregate. */
   public void delete() {
     registerEvent(new OfficeDeleted(this.id.id()));
+  }
+
+  /** Orphans the creator (nulls it) when the creator's user account is deleted; the office survives. */
+  public void removeCreator() {
+    this.creator = null;
   }
 
   @Override
