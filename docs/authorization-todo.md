@@ -19,6 +19,8 @@ office { organization: organization; creator: user; occupant: user }
 - [x] `organization#member@user` — on user creation (`AddUser`)
 - [x] `team#organization`, `team#creator` — on team create
 - [x] `team#member` — on add member (deleted on remove member)
+- [x] `team#admin` — on promote member to admin (deleted on revoke / remove member); many admins
+      per team allowed
 - [x] whole `team:{id}` wiped — on team delete
 - [x] `office#organization`, `office#creator` — on office create
 - [x] `office#occupant` — on assign (deleted on unassign / re-assign move)
@@ -33,8 +35,6 @@ office { organization: organization; creator: user; occupant: user }
 
 ### Model completeness
 
-- [ ] **`team#admin` is defined but never written.** Either implement "assign/promote team
-      admin" (command + event + listener) or drop the relation from the schema.
 - [ ] **`office` has no `admin` relation** while `team` does. Decide whether offices need admins
       (asymmetry is currently intentional-by-default).
 - [ ] **No "leave organization" / remove-org-member path.** `organization#member` is now removed

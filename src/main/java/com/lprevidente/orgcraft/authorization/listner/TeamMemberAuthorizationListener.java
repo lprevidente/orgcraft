@@ -3,7 +3,9 @@ package com.lprevidente.orgcraft.authorization.listner;
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
 import com.authzed.api.v1.WriteRelationshipsRequest;
 import com.lprevidente.orgcraft.team.domain.event.AddedUserToTeam;
+import com.lprevidente.orgcraft.team.domain.event.PromotedTeamMemberToAdmin;
 import com.lprevidente.orgcraft.team.domain.event.RemovedUserFromTeam;
+import com.lprevidente.orgcraft.team.domain.event.RevokedTeamMemberAdmin;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.modulith.events.ApplicationModuleListener;
@@ -36,11 +38,39 @@ class TeamMemberAuthorizationListener extends BaseListener {
     final var teamId = event.teamId().id().toString();
     final var userId = event.userId().id().toString();
 
+    // A removed member holds neither relation; drop both (admin delete is a no-op if not admin).
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
             .addUpdates(delete(TEAM_RESOURCE, teamId, MEMBER_RELATION, USER_SUBJECT, userId))
+            .addUpdates(delete(TEAM_RESOURCE, teamId, ADMIN_RELATION, USER_SUBJECT, userId))
             .build());
 
-    log.info("Deleted SpiceDB tuple team:{}#member@user:{}", teamId, userId);
+    log.info("Deleted SpiceDB tuples team:{}#member@user:{} and team:{}#admin@user:{}", teamId, userId, teamId, userId);
+  }
+
+  @ApplicationModuleListener
+  void on(PromotedTeamMemberToAdmin event) {
+    final var teamId = event.teamId().id().toString();
+    final var userId = event.userId().id().toString();
+
+    permissionsService.writeRelationships(
+        WriteRelationshipsRequest.newBuilder()
+            .addUpdates(touch(TEAM_RESOURCE, teamId, ADMIN_RELATION, USER_SUBJECT, userId))
+            .build());
+
+    log.info("Wrote SpiceDB tuple team:{}#admin@user:{}", teamId, userId);
+  }
+
+  @ApplicationModuleListener
+  void on(RevokedTeamMemberAdmin event) {
+    final var teamId = event.teamId().id().toString();
+    final var userId = event.userId().id().toString();
+
+    permissionsService.writeRelationships(
+        WriteRelationshipsRequest.newBuilder()
+            .addUpdates(delete(TEAM_RESOURCE, teamId, ADMIN_RELATION, USER_SUBJECT, userId))
+            .build());
+
+    log.info("Deleted SpiceDB tuple team:{}#admin@user:{}", teamId, userId);
   }
 }

@@ -6,4 +6,6 @@ import org.jmolecules.architecture.cqrs.QueryModel;
 @QueryModel
 public interface TeamMemberView {
   TeamMemberId getId();
+
+  boolean isAdmin();
 }

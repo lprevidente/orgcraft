@@ -2,7 +2,9 @@ package com.lprevidente.orgcraft.team.domain;
 
 import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.event.AddedUserToTeam;
+import com.lprevidente.orgcraft.team.domain.event.PromotedTeamMemberToAdmin;
 import com.lprevidente.orgcraft.team.domain.event.RemovedUserFromTeam;
+import com.lprevidente.orgcraft.team.domain.event.RevokedTeamMemberAdmin;
 import com.lprevidente.orgcraft.user.api.UserApi;
 import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.persistence.Column;
@@ -10,6 +12,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
@@ -31,9 +34,14 @@ public class TeamMember extends AbstractAggregateRoot<TeamMember> {
   @Column(nullable = false, columnDefinition = "timestamp")
   private LocalDateTime joinedAt;
 
+  @ColumnDefault("false")
+  @Column(nullable = false)
+  private boolean admin;
+
   @TenantId
+  @Nullable
   @Column(name = "tenant_id", nullable = false, updatable = false)
-  private @Nullable String tenantId;
+  private String tenantId;
 
   public TeamMember(
       TeamId teamId, //
@@ -56,9 +64,23 @@ public class TeamMember extends AbstractAggregateRoot<TeamMember> {
     registerEvent(new AddedUserToTeam(teamId, userId));
   }
 
-  /** Registers the {@link RemovedUserFromTeam} event; call before removing the aggregate. */
+  /**
+   * Registers the {@link RemovedUserFromTeam} event; call before removing the aggregate.
+   */
   public void remove() {
     registerEvent(new RemovedUserFromTeam(id.getTeamId(), id.getUserId()));
+  }
+
+  public void promoteToAdmin() {
+    if (admin) return;
+    this.admin = true;
+    registerEvent(new PromotedTeamMemberToAdmin(getTeamId(), getUserId()));
+  }
+
+  public void revokeAdmin() {
+    if (!admin) return;
+    this.admin = false;
+    registerEvent(new RevokedTeamMemberAdmin(getTeamId(), getUserId()));
   }
 
   public TeamId getTeamId() {
