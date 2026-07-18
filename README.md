@@ -16,6 +16,7 @@ the **shape of the code**, not the feature set.
 | Framework          | Spring Boot 4.0.5                                                   |
 | Persistence        | Spring Data JPA, Hibernate 7, PostgreSQL                            |
 | Modularity         | Spring Modulith 2.0.5                                               |
+| Authorization      | SpiceDB (ReBAC) over gRPC                                           |
 | DDD semantics      | jMolecules (DDD + CQRS + events annotations, BOM `2025.0.2`)        |
 | JPA translation    | `jmolecules-jpa` + `jmolecules-spring` via ByteBuddy (compile-time) |
 | Architecture tests | `jmolecules-archunit` + ArchUnit                                    |
@@ -34,8 +35,11 @@ layout:
 ```
 com.lprevidente.orgcraft/
 ├── Application.java
-├── config/                          # Cross-cutting framework config (security, error handling)
-├── common/                          # Shared kernel (base types, identifier abstraction)
+├── config/                          # Cross-cutting framework config (error handling)
+├── common/                          # Shared kernel: identifier abstraction, authorization port + schema mirror
+├── security/                        # Method security: hasPermission evaluator, @tenant SpEL bean
+├── tenancy/                         # Per-request tenant context (multi-tenancy)
+├── authorization/                   # SpiceDB adapter, schema bootstrap, domain-event → relationship listeners
 └── <bounded-context>/
     ├── api/                         # Named interface exposed to other modules (optional)
     ├── application/
@@ -112,6 +116,89 @@ MemberView.class)` to hydrate user data from the user module.
 
 ---
 
+## Authorization (ReBAC via SpiceDB)
+
+Access control is **relationship-based** (ReBAC), backed by [SpiceDB](https://authzed.com/spicedb).
+The domain stores *relationships* ("who relates to what"); SpiceDB *computes* permissions from them.
+The application keeps no ACLs — it only ever asks SpiceDB two questions.
+
+### The model
+
+The schema lives in `resources/spicedb/schema.zed` and is the single source of truth.
+`common/authorization/SpiceDbSchema` mirrors its type / relation / permission names in Java, so a
+rename is a single-place change and a typo can't target a non-existent object.
+
+| Resource       | Relations                                       | `view`                                    | `manage`                      |
+|----------------|-------------------------------------------------|-------------------------------------------|-------------------------------|
+| `organization` | `admin`, `member`                               | —                                         | `admin`                       |
+| `team`         | `organization`, `creator`, `admin`, `member`    | `admin + member + organization→manage`    | `admin + organization→manage` |
+| `office`       | `organization`, `creator`, `admin`, `occupant`  | `admin + occupant + organization→manage`  | `admin + organization→manage` |
+| `user`         | `organization`, `office`                        | `organization→manage + office→manage`     | `organization→manage`         |
+
+`→manage` is an *arrow*: a team/office inherits an org admin's power by following its `organization`
+relation up to the org's `manage`. Promoting someone to team/office `admin` grants them `view` +
+`manage` on that one resource.
+
+The `user` resource **mirrors** the org/office edges it belongs to (`user#organization`,
+`user#office`) — the reverse of `organization#member` / `office#occupant`. SpiceDB arrows only
+traverse resource → subject, so those mirror edges are what let a *reverse* lookup like "which users
+can this office admin see?" resolve.
+
+### Two questions, two call sites
+
+- **Guard one resource** — declarative, on the controller method (→ SpiceDB `CheckPermission`):
+  ```java
+  @PreAuthorize("hasPermission(#id, 'office', 'view')")
+  ```
+  Tenant-scoped creates read `@tenant.organizationId()`, a `CurrentTenant` SpEL bean:
+  ```java
+  @PreAuthorize("hasPermission(@tenant.organizationId(), 'organization', 'manage')")
+  ```
+- **Filter a list** — ask "which ids can this subject reach?", then filter the read model
+  (→ SpiceDB `LookupResources`):
+  ```java
+  authorization.accessibleResourceIds(Type.OFFICE, Permission.VIEW, user.id())
+      .map(officeQueryService::findAllByIds)   // some ids → filtered
+      .orElseGet(officeQueryService::findAll);  // empty → authz disabled, return all
+  ```
+
+Both go through the `ResourceAuthorization` port (`common/authorization/`), implemented by
+`SpiceDbResourceAuthorization` in the `authorization/` module. Reads run **fully consistent**
+(read-your-writes) so a check reflects a tuple written by a just-processed event. The
+`hasPermission(...)` SpEL is wired to the port by `ResourceAuthorizationPermissionEvaluator`
+(`security/`), enabled via `@EnableMethodSecurity`.
+
+### Relationships follow domain events
+
+Tuples are never written inline. Aggregates raise domain events; `@ApplicationModuleListener`s in the
+`authorization/` module translate them into `WriteRelationships` / `DeleteRelationships` calls:
+
+```
+AssignedUserToOffice           →  office:{id}#occupant@user:{u}  +  user:{u}#office@office:{id}
+PromotedOfficeOccupantToAdmin  →  office:{id}#admin@user:{u}
+UserRegistered                 →  organization:{org}#member@user:{u}  +  user:{u}#organization@organization:{org}
+OrganizationDeleted            →  delete every organization:{id} tuple (+ mirror edges by subject)
+```
+
+Listeners run through Spring Modulith's event-publication registry (transactional, at-least-once).
+`EventPublicationRetryConfig` resubmits failed publications and dead-letters those past the attempt
+cap: a transient SpiceDB blip self-heals, a persistent failure is logged for reconciliation.
+
+### Startup & toggling
+
+- `SpiceDbSchemaBootstrap` (an `ApplicationRunner`) pushes `schema.zed` to SpiceDB on boot.
+- `SpiceDbConfig` builds the gRPC channel; `orgcraft.spicedb.*` properties (`enabled`, `endpoint`,
+  `preshared-key`, `plaintext`) configure it.
+- **Everything above is `@ConditionalOnProperty("orgcraft.spicedb.enabled")`.** When disabled, a
+  permit-all `ResourceAuthorization` fallback returns "everything / allowed" — this is how the H2
+  test profile runs, so tests exercise handlers without a SpiceDB container.
+
+The `http/` folder contains runnable end-to-end scenarios (`test-office-view.http`,
+`test-user-view.http`, `test-team-view.http`) that walk the org-admin ▸ resource-admin ▸ member
+hierarchy and assert the 200/403 outcomes — meaningful only with SpiceDB enabled.
+
+---
+
 ## Domain Conventions
 
 ### Aggregates
@@ -176,9 +263,13 @@ To inspect the result: `javap -v -p target/classes/.../User.class`
 **Prerequisites:** Java 25, Maven, Docker
 
 ```bash
-./mvnw spring-boot:run          # starts app + Postgres via Docker Compose
-./mvnw test                     # run all tests (H2)
+./mvnw spring-boot:run          # starts app + Postgres + SpiceDB via Docker Compose
+./mvnw test                     # run all tests (H2, SpiceDB disabled → permit-all)
 ```
+
+Docker Compose brings up PostgreSQL, SpiceDB (`authzed/spicedb`, in-memory datastore, preshared key
+`orgcraft-dev-key`) and a grpcui for inspecting SpiceDB. On boot the app writes `schema.zed` to
+SpiceDB automatically. Set `orgcraft.spicedb.enabled=false` to run without it (permit-all).
 
 ---
 
