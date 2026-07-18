@@ -30,9 +30,12 @@ class OfficeAssignmentAuthorizationListener extends BaseListener {
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
             .addUpdates(touch(Type.OFFICE, officeId, Relation.OCCUPANT, Type.USER, userId))
+            .addUpdates(touch(Type.USER, userId, Relation.OFFICE, Type.OFFICE, officeId))
             .build());
 
-    log.info("Wrote SpiceDB tuple office:{}#occupant@user:{}", officeId, userId);
+    log.info(
+        "Wrote SpiceDB tuples office:{}#occupant@user:{}, user:{}#office@office:{}",
+        officeId, userId, userId, officeId);
   }
 
   @ApplicationModuleListener
@@ -45,9 +48,10 @@ class OfficeAssignmentAuthorizationListener extends BaseListener {
         WriteRelationshipsRequest.newBuilder()
             .addUpdates(delete(Type.OFFICE, officeId, Relation.OCCUPANT, Type.USER, userId))
             .addUpdates(delete(Type.OFFICE, officeId, Relation.ADMIN, Type.USER, userId))
+            .addUpdates(delete(Type.USER, userId, Relation.OFFICE, Type.OFFICE, officeId))
             .build());
 
-    log.info("Deleted SpiceDB tuples office:{}#occupant@user:{} and office:{}#admin@user:{}", officeId, userId, officeId, userId);
+    log.info("Deleted SpiceDB tuples for office:{} / user:{} unassignment", officeId, userId);
   }
 
   @ApplicationModuleListener

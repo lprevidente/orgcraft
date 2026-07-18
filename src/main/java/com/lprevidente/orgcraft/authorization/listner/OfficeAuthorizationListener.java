@@ -54,6 +54,7 @@ class OfficeAuthorizationListener extends BaseListener {
                     .setResourceType(Type.OFFICE)
                     .setOptionalResourceId(officeId))
             .build());
+    permissionsService.deleteRelationships(deleteBySubject(Type.USER, Type.OFFICE, officeId));
 
     log.info("Deleted all SpiceDB relationships for office:{}", officeId);
   }

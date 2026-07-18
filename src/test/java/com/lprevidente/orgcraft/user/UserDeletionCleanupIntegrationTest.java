@@ -15,14 +15,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.jdbc.Sql;
 
 /**
  * Fixtures: Mario ({@code 1111…}) creates all 3 teams and offices, is a Development-team member and
  * is assigned to the Rome office. Anna ({@code 2222…}) shares both and must be left intact.
  */
-@WithMockUser
+// Authenticate as Giuseppe (uninvolved in the fixtures) — the deleted user is Mario.
+@WithUserDetails(value = "giuseppe.verdi@example.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
 @Sql(
     value = {"/users.sql", "/team.sql", "/team_members.sql", "/offices.sql", "/office_assignments.sql"},
     executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)

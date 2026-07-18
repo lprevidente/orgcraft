@@ -29,6 +29,7 @@ public final class SpiceDbSchema {
   /** Relation names — stored edges, written as relationships. */
   public static final class Relation {
     public static final String ORGANIZATION = "organization";
+    public static final String OFFICE = "office";
     public static final String CREATOR = "creator";
     public static final String ADMIN = "admin";
     public static final String MEMBER = "member";

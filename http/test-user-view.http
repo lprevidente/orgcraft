@@ -1,0 +1,236 @@
+### ═══════════════════════════════════════════════════════════════════
+### User visibility — org admin ▸ office admin ▸ occupant
+###
+### Schema (user resource):
+###   user  view   = organization->manage + office->manage
+###         manage = organization->manage
+###   (office#occupant is mirrored as user#office so the reverse lookup resolves)
+###
+### Actors (org "usersflowco"):
+###   • Fran — founder ⇒ ORG admin
+###   • Adam — OFFICE admin of HQ (promoted by Fran)
+###   • Otto — occupant of HQ
+###   • Zoe  — occupant of Branch (a different office)
+###
+### Rules verified:
+###   • org admin sees every user in the org, self included (Fran GET /users → 4)
+###   • office admin sees only occupants of their office   (Adam sees Adam+Otto, not Zoe)
+###   • office admin can view an occupant, not an outsider (Otto → 200, Zoe → 403)
+###   • plain occupant sees nobody                         (Otto GET /users → empty)
+###   • create/delete are org-admin only                   (Adam → 403, Fran → 201/204)
+###
+### Self-contained. Run top-to-bottom. Requires the app up with
+### orgcraft.spicedb.enabled=true and SpiceDB reachable — with SpiceDB
+### disabled the permit-all fallback returns everything, so the filtering
+### and the 403s won't happen and the assertions become meaningless.
+### NOTE: SpiceDB tuples are written by async module-event listeners, so
+###       let each write settle before the verifying read (top-to-bottom
+###       manual execution is plenty).
+### ═══════════════════════════════════════════════════════════════════
+
+@host = http://127.0.0.1:8080
+@slug = usersflowco
+@franEmail = fran@usersflowco.com
+@pwd = Password@123
+@adamEmail = adam@usersflowco.com
+@ottoEmail = otto@usersflowco.com
+@zoeEmail = zoe@usersflowco.com
+
+### U1. Register org (public) → Fran becomes ORG admin
+POST {{host}}/api/v1/organizations
+Content-Type: application/json
+
+{
+  "name": "UsersFlowCo",
+  "slug": "{{slug}}",
+  "founderFirstName": "Fran",
+  "founderLastName": "Founder",
+  "founderEmail": "{{franEmail}}",
+  "founderPassword": "{{pwd}}"
+}
+
+> {%
+    client.global.set("orgId", response.body.organizationId);
+    client.global.set("franId", response.body.founderId);
+%}
+
+### U2. Login as Fran (org admin)
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{franEmail}}&password={{pwd}}&tenant={{slug}}
+
+### U3. Fran creates Adam (future office admin)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Adam", "lastName": "Admin", "email": "{{adamEmail}}", "password": "{{pwd}}" }
+
+> {%
+    client.test("Org admin creates a user", function () { client.assert(response.status === 201, "expected 201, got " + response.status); });
+    client.global.set("adamId", response.body.id);
+%}
+
+### U4. Fran creates Otto (occupant of HQ)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Otto", "lastName": "Occupant", "email": "{{ottoEmail}}", "password": "{{pwd}}" }
+
+> {% client.global.set("ottoId", response.body.id); %}
+
+### U5. Fran creates Zoe (occupant of Branch)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Zoe", "lastName": "Zephyr", "email": "{{zoeEmail}}", "password": "{{pwd}}" }
+
+> {% client.global.set("zoeId", response.body.id); %}
+
+### U6. Fran creates office HQ
+POST {{host}}/api/v1/offices
+Content-Type: application/json
+
+{ "name": "HQ Office", "address": { "address": "Via Roma 1", "city": "Rome", "country": "Italy" } }
+
+> {% client.global.set("hqId", response.body.id); %}
+
+### U7. Fran creates office Branch
+POST {{host}}/api/v1/offices
+Content-Type: application/json
+
+{ "name": "Branch Office", "address": { "address": "Via Milano 2", "city": "Milan", "country": "Italy" } }
+
+> {% client.global.set("branchId", response.body.id); %}
+
+### U8. Assign Adam → HQ
+POST {{host}}/api/v1/offices/{{hqId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{hqId}}", "userId": "{{adamId}}" }
+
+### U9. Assign Otto → HQ
+POST {{host}}/api/v1/offices/{{hqId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{hqId}}", "userId": "{{ottoId}}" }
+
+### U10. Assign Zoe → Branch
+POST {{host}}/api/v1/offices/{{branchId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{branchId}}", "userId": "{{zoeId}}" }
+
+### U11. Fran promotes Adam to OFFICE admin of HQ → 204
+PUT {{host}}/api/v1/offices/{{hqId}}/members/{{adamId}}/admin
+
+> {% client.test("Org admin promotes Adam to office admin", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}
+
+### ── As Fran (ORG admin) ─────────────────────────────────────────────
+
+### U12. Fran lists users → sees every user in the org, himself included (Fran, Adam, Otto, Zoe)
+GET {{host}}/api/v1/users
+
+> {%
+    client.test("Org admin sees all users in the org", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        const ids = response.body.map(u => u.id);
+        client.assert(response.body.length === 4, "expected 4 users, got " + response.body.length);
+        client.assert(ids.includes(client.global.get("franId")), "should see Fran (himself)");
+        client.assert(ids.includes(client.global.get("adamId")), "should see Adam");
+        client.assert(ids.includes(client.global.get("ottoId")), "should see Otto");
+        client.assert(ids.includes(client.global.get("zoeId")), "should see Zoe");
+    });
+%}
+
+### U13. Fran views a single user → 200
+GET {{host}}/api/v1/users/{{ottoId}}
+
+> {% client.test("Org admin views a user", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### ── As Adam (OFFICE admin of HQ) ────────────────────────────────────
+
+### U14. Login as Adam
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{adamEmail}}&password={{pwd}}&tenant={{slug}}
+
+### U15. Adam lists users → sees ONLY HQ occupants (Adam + Otto), not Zoe, not Fran
+GET {{host}}/api/v1/users
+
+> {%
+    client.test("Office admin sees only occupants of the office he administers", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        const ids = response.body.map(u => u.id);
+        client.assert(response.body.length === 2, "expected 2 users, got " + response.body.length);
+        client.assert(ids.includes(client.global.get("adamId")), "should see Adam (HQ occupant)");
+        client.assert(ids.includes(client.global.get("ottoId")), "should see Otto (HQ occupant)");
+        client.assert(!ids.includes(client.global.get("zoeId")), "must NOT see Zoe (Branch)");
+        client.assert(!ids.includes(client.global.get("franId")), "must NOT see Fran (no office)");
+    });
+%}
+
+### U16. Adam views an HQ occupant → 200
+GET {{host}}/api/v1/users/{{ottoId}}
+
+> {% client.test("Office admin views his occupant", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### U17. Adam views a Branch occupant → 403
+GET {{host}}/api/v1/users/{{zoeId}}
+
+> {% client.test("Office admin CANNOT view an outsider", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### U18. Adam tries to create a user → 403 (not org admin)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Nope", "lastName": "Denied", "email": "nope@usersflowco.com", "password": "{{pwd}}" }
+
+> {% client.test("Office admin CANNOT create users", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### U19. Adam tries to delete Otto → 403 (not org admin)
+DELETE {{host}}/api/v1/users/{{ottoId}}
+
+> {% client.test("Office admin CANNOT delete users", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### ── As Otto (plain occupant) ────────────────────────────────────────
+
+### U20. Login as Otto
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{ottoEmail}}&password={{pwd}}&tenant={{slug}}
+
+### U21. Otto lists users → sees nobody (administers nothing, not org admin)
+GET {{host}}/api/v1/users
+
+> {%
+    client.test("Plain occupant sees no users", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 0, "expected 0 users, got " + response.body.length);
+    });
+%}
+
+### U22. Otto tries to view Adam → 403
+GET {{host}}/api/v1/users/{{adamId}}
+
+> {% client.test("Plain occupant CANNOT view a user", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### ── Teardown (only org admin may delete users / the org) ─────────────
+
+### U23. Login as Fran (org admin)
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{franEmail}}&password={{pwd}}&tenant={{slug}}
+
+### U24. Fran deletes Zoe → 204
+DELETE {{host}}/api/v1/users/{{zoeId}}
+
+> {% client.test("Org admin deletes a user", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}
+
+### U25. Fran deletes the org → 204. Cascades: offices + all tuples removed.
+DELETE {{host}}/api/v1/organizations/{{orgId}}
+
+> {% client.test("Org admin deletes the org", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}

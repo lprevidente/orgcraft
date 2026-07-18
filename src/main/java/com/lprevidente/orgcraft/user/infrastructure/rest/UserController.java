@@ -1,5 +1,8 @@
 package com.lprevidente.orgcraft.user.infrastructure.rest;
 
+import com.lprevidente.orgcraft.common.authorization.ResourceAuthorization;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Permission;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
 import com.lprevidente.orgcraft.user.api.UserId;
 import com.lprevidente.orgcraft.user.application.command.CreateUserReq;
 import com.lprevidente.orgcraft.user.application.command.CreateUserRes;
@@ -14,9 +17,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,13 +31,18 @@ class UserController {
   private final AddUserHandler addUserHandler;
   private final UpdateUserHandler updateUserHandler;
   private final DeleteUserHandler deleteUserHandler;
+  private final ResourceAuthorization authorization;
 
   @GetMapping
-  Collection<UserView> getUsers() {
-    return userQueryService.findAll();
+  Collection<UserView> getUsers(@AuthenticationPrincipal(expression = "id") UserId requester) {
+    return authorization.accessibleResourceIds(Type.USER, Permission.VIEW, requester.id())
+        .map(ids -> ids.stream().map(UserId::new).collect(Collectors.toSet()))
+        .map(userQueryService::findAllByIds)
+        .orElseGet(userQueryService::findAll);
   }
 
   @GetMapping("{id}")
+  @PreAuthorize("hasPermission(#id, 'user', 'view')")
   UserView getUser(@PathVariable UserId id) {
     return userQueryService.getUserById(id);
   }

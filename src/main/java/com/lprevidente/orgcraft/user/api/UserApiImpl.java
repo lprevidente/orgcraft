@@ -1,5 +1,6 @@
 package com.lprevidente.orgcraft.user.api;
 
+import com.lprevidente.orgcraft.tenancy.api.TenantContext;
 import com.lprevidente.orgcraft.user.application.query.UserReadRepository;
 import com.lprevidente.orgcraft.user.domain.Email;
 import com.lprevidente.orgcraft.user.domain.Password;
@@ -7,6 +8,7 @@ import com.lprevidente.orgcraft.user.domain.User;
 import com.lprevidente.orgcraft.user.domain.Users;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.ddd.annotation.Service;
+import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.Map;
@@ -47,7 +49,14 @@ class UserApiImpl implements UserApi {
   @Override
   public void register(UserId id, String firstName, String lastName, String email, String plainPassword) {
     final var user = new User(id, firstName, lastName, Password.create(plainPassword), new Email(email), users);
+    user.assignToOrganization(currentOrganizationId());
     users.save(user);
+  }
+
+  private UUID currentOrganizationId() {
+    final var tenantId = TenantContext.get();
+    Assert.state(tenantId != null, "No tenant in context");
+    return tenantId.value();
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.lprevidente.orgcraft.user.application.projection.UserView;
 import com.lprevidente.orgcraft.user.api.UserId;
 import com.lprevidente.orgcraft.user.domain.exception.UserNotFoundException;
 import java.util.Collection;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.ddd.annotation.Service;
 
@@ -14,6 +15,13 @@ public class UserQueryService {
 
   public Collection<UserView> findAll() {
     return users.findAllBy(UserView.class);
+  }
+
+  public Collection<UserView> findAllByIds(Collection<UserId> ids) {
+    if (ids.isEmpty()) {
+      return List.of();
+    }
+    return users.findAllByIdIn(ids, UserView.class);
   }
 
   public UserView getUserById(UserId userId) {

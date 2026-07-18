@@ -1,5 +1,9 @@
 definition user {
-    permission manage = organization -> manage + office -> manage
+  relation organization: organization
+  relation office: office
+
+  permission view = organization -> manage + office -> manage
+  permission manage = organization -> manage
 }
 
 definition organization {

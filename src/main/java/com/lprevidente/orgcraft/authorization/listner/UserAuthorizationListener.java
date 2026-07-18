@@ -1,6 +1,8 @@
 package com.lprevidente.orgcraft.authorization.listner;
 
+import com.authzed.api.v1.DeleteRelationshipsRequest;
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
+import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
 import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Relation;
 import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
@@ -28,9 +30,12 @@ class UserAuthorizationListener extends BaseListener {
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
             .addUpdates(touch(Type.ORGANIZATION, orgId, Relation.MEMBER, Type.USER, userId))
+            .addUpdates(touch(Type.USER, userId, Relation.ORGANIZATION, Type.ORGANIZATION, orgId))
             .build());
 
-    log.info("Wrote SpiceDB tuple organization:{}#member@user:{}", orgId, userId);
+    log.info(
+        "Wrote SpiceDB tuples organization:{}#member@user:{}, user:{}#organization@organization:{}",
+        orgId, userId, userId, orgId);
   }
 
   @ApplicationModuleListener
@@ -42,6 +47,15 @@ class UserAuthorizationListener extends BaseListener {
     permissionsService.deleteRelationships(deleteBySubject(Type.TEAM, Type.USER, userId));
     permissionsService.deleteRelationships(deleteBySubject(Type.OFFICE, Type.USER, userId));
 
-    log.info("Deleted all SpiceDB relationships where user:{} is the subject", userId);
+    // Also evict the user as a resource (its own organization/office edges).
+    permissionsService.deleteRelationships(
+        DeleteRelationshipsRequest.newBuilder()
+            .setRelationshipFilter(
+                RelationshipFilter.newBuilder()
+                    .setResourceType(Type.USER)
+                    .setOptionalResourceId(userId))
+            .build());
+
+    log.info("Deleted all SpiceDB relationships involving user:{}", userId);
   }
 }
