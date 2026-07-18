@@ -4,6 +4,8 @@ import com.authzed.api.v1.DeleteRelationshipsRequest;
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
 import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Relation;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
 import com.lprevidente.orgcraft.office.domain.event.OfficeCreated;
 import com.lprevidente.orgcraft.office.domain.event.OfficeDeleted;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +31,8 @@ class OfficeAuthorizationListener extends BaseListener {
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
             .addUpdates(
-                touch(OFFICE_RESOURCE, officeId, ORGANIZATION_RELATION, ORGANIZATION_SUBJECT, orgId))
-            .addUpdates(touch(OFFICE_RESOURCE, officeId, CREATOR_RELATION, USER_SUBJECT, creatorId))
+                touch(Type.OFFICE, officeId, Relation.ORGANIZATION, Type.ORGANIZATION, orgId))
+            .addUpdates(touch(Type.OFFICE, officeId, Relation.CREATOR, Type.USER, creatorId))
             .build());
 
     log.info(
@@ -49,7 +51,7 @@ class OfficeAuthorizationListener extends BaseListener {
         DeleteRelationshipsRequest.newBuilder()
             .setRelationshipFilter(
                 RelationshipFilter.newBuilder()
-                    .setResourceType(OFFICE_RESOURCE)
+                    .setResourceType(Type.OFFICE)
                     .setOptionalResourceId(officeId))
             .build());
 

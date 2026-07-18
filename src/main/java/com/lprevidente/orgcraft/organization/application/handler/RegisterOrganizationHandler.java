@@ -25,13 +25,11 @@ public class RegisterOrganizationHandler {
     // Pre-allocate the founder id so it can be an intrinsic part of the Organization aggregate;
     // the founder user is then created under the new org's tenant with that same id.
     final var founderId = new UserId();
-    final var organization =
-        new Organization(command.name(), new Slug(command.slug()), founderId, organizations);
+    final var organization = new Organization(command.name(), new Slug(command.slug()), founderId, organizations);
 
     try {
       TenantContext.set(TenantId.of(organization.getId().id()));
-      users.register(
-          founderId,
+      users.register(founderId,
           command.founderFirstName(),
           command.founderLastName(),
           command.founderEmail(),

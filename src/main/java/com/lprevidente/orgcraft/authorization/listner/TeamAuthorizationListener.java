@@ -4,6 +4,8 @@ import com.authzed.api.v1.DeleteRelationshipsRequest;
 import com.authzed.api.v1.PermissionsServiceGrpc;
 import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Relation;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
 import com.lprevidente.orgcraft.team.domain.event.TeamCreated;
 import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +30,8 @@ class TeamAuthorizationListener extends BaseListener {
 
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
-            .addUpdates(touch(TEAM_RESOURCE, teamId, ORGANIZATION_RELATION, ORGANIZATION_SUBJECT, orgId))
-            .addUpdates(touch(TEAM_RESOURCE, teamId, CREATOR_RELATION, USER_SUBJECT, creatorId))
+            .addUpdates(touch(Type.TEAM, teamId, Relation.ORGANIZATION, Type.ORGANIZATION, orgId))
+            .addUpdates(touch(Type.TEAM, teamId, Relation.CREATOR, Type.USER, creatorId))
             .build());
 
     log.info(
@@ -50,7 +52,7 @@ class TeamAuthorizationListener extends BaseListener {
         DeleteRelationshipsRequest.newBuilder()
             .setRelationshipFilter(
                 RelationshipFilter.newBuilder()
-                    .setResourceType(TEAM_RESOURCE)
+                    .setResourceType(Type.TEAM)
                     .setOptionalResourceId(teamId))
             .build());
 

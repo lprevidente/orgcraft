@@ -2,6 +2,8 @@ package com.lprevidente.orgcraft.authorization.listner;
 
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
 import com.authzed.api.v1.WriteRelationshipsRequest;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Relation;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
 import com.lprevidente.orgcraft.team.domain.event.AddedUserToTeam;
 import com.lprevidente.orgcraft.team.domain.event.PromotedTeamMemberToAdmin;
 import com.lprevidente.orgcraft.team.domain.event.RemovedUserFromTeam;
@@ -27,7 +29,7 @@ class TeamMemberAuthorizationListener extends BaseListener {
 
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
-            .addUpdates(touch(TEAM_RESOURCE, teamId, MEMBER_RELATION, USER_SUBJECT, userId))
+            .addUpdates(touch(Type.TEAM, teamId, Relation.MEMBER, Type.USER, userId))
             .build());
 
     log.info("Wrote SpiceDB tuple team:{}#member@user:{}", teamId, userId);
@@ -41,8 +43,8 @@ class TeamMemberAuthorizationListener extends BaseListener {
     // A removed member holds neither relation; drop both (admin delete is a no-op if not admin).
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
-            .addUpdates(delete(TEAM_RESOURCE, teamId, MEMBER_RELATION, USER_SUBJECT, userId))
-            .addUpdates(delete(TEAM_RESOURCE, teamId, ADMIN_RELATION, USER_SUBJECT, userId))
+            .addUpdates(delete(Type.TEAM, teamId, Relation.MEMBER, Type.USER, userId))
+            .addUpdates(delete(Type.TEAM, teamId, Relation.ADMIN, Type.USER, userId))
             .build());
 
     log.info("Deleted SpiceDB tuples team:{}#member@user:{} and team:{}#admin@user:{}", teamId, userId, teamId, userId);
@@ -55,7 +57,7 @@ class TeamMemberAuthorizationListener extends BaseListener {
 
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
-            .addUpdates(touch(TEAM_RESOURCE, teamId, ADMIN_RELATION, USER_SUBJECT, userId))
+            .addUpdates(touch(Type.TEAM, teamId, Relation.ADMIN, Type.USER, userId))
             .build());
 
     log.info("Wrote SpiceDB tuple team:{}#admin@user:{}", teamId, userId);
@@ -68,7 +70,7 @@ class TeamMemberAuthorizationListener extends BaseListener {
 
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
-            .addUpdates(delete(TEAM_RESOURCE, teamId, ADMIN_RELATION, USER_SUBJECT, userId))
+            .addUpdates(delete(Type.TEAM, teamId, Relation.ADMIN, Type.USER, userId))
             .build());
 
     log.info("Deleted SpiceDB tuple team:{}#admin@user:{}", teamId, userId);

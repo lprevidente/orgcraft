@@ -4,6 +4,8 @@ import com.authzed.api.v1.DeleteRelationshipsRequest;
 import com.authzed.api.v1.PermissionsServiceGrpc.PermissionsServiceBlockingStub;
 import com.authzed.api.v1.RelationshipFilter;
 import com.authzed.api.v1.WriteRelationshipsRequest;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Relation;
+import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
 import com.lprevidente.orgcraft.organization.domain.event.OrganizationCreated;
 import com.lprevidente.orgcraft.organization.domain.event.OrganizationDeleted;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +30,8 @@ class OrganizationAuthorizationListener extends BaseListener {
     // Founder is both an admin and a member of the organization.
     permissionsService.writeRelationships(
         WriteRelationshipsRequest.newBuilder()
-            .addUpdates(touch(ORGANIZATION_RESOURCE, orgId, ADMIN_RELATION, USER_SUBJECT, founderId))
-            .addUpdates(touch(ORGANIZATION_RESOURCE, orgId, MEMBER_RELATION, USER_SUBJECT, founderId))
+            .addUpdates(touch(Type.ORGANIZATION, orgId, Relation.ADMIN, Type.USER, founderId))
+            .addUpdates(touch(Type.ORGANIZATION, orgId, Relation.MEMBER, Type.USER, founderId))
             .build());
 
     log.info(
@@ -50,7 +52,7 @@ class OrganizationAuthorizationListener extends BaseListener {
         DeleteRelationshipsRequest.newBuilder()
             .setRelationshipFilter(
                 RelationshipFilter.newBuilder()
-                    .setResourceType(ORGANIZATION_RESOURCE)
+                    .setResourceType(Type.ORGANIZATION)
                     .setOptionalResourceId(orgId))
             .build());
 

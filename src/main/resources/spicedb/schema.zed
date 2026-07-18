@@ -3,6 +3,8 @@ definition user {}
 definition organization {
   relation admin: user
   relation member: user
+
+  permission manage = admin
 }
 
 definition team {
@@ -17,4 +19,7 @@ definition office {
   relation creator: user
   relation admin: user
   relation occupant: user
+
+  permission view = admin + occupant + organization -> manage
+  permission manage = admin + organization -> manage
 }
