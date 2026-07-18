@@ -1,8 +1,8 @@
 package com.lprevidente.orgcraft.team.application.handler;
 
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
-import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.application.command.CreateTeam;
+import com.lprevidente.orgcraft.team.application.command.CreateTeamRes;
 import com.lprevidente.orgcraft.team.domain.Team;
 import com.lprevidente.orgcraft.team.domain.Teams;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
@@ -18,10 +18,10 @@ public class CreateTeamHandler {
   private final Teams teams;
 
   @CommandHandler
-  public TeamId handle(CreateTeam command, UserId creator) {
+  public CreateTeamRes handle(CreateTeam command, UserId creator) {
     final var team = new Team(command.name(), creator, currentOrganization());
     teams.save(team);
-    return team.getId();
+    return new CreateTeamRes(team.getId());
   }
 
   private OrganizationId currentOrganization() {

@@ -59,8 +59,8 @@ Content-Type: application/json
 { "name": "Platform" }
 
 > {%
-    client.global.set("teamId", response.body);
-    client.log("teamId=" + response.body);
+    client.global.set("teamId", response.body.id);
+    client.log("teamId=" + response.body.id);
 %}
 
 ### 5. Add the user to the team → writes team:{id}#member@user:{user}

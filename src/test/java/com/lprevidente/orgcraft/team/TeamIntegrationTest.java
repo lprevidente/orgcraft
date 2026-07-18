@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.lprevidente.orgcraft.BaseIntegrationTest;
 import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.application.command.CreateTeam;
+import com.lprevidente.orgcraft.team.application.command.CreateTeamRes;
 import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -69,6 +70,7 @@ class TeamIntegrationTest extends BaseIntegrationTest {
           .assertThat()
           .hasStatus(HttpStatus.CREATED)
           .bodyJson()
+          .extractingPath("$.id")
           .isNotNull();
 
       mockMvcTester
@@ -164,7 +166,7 @@ class TeamIntegrationTest extends BaseIntegrationTest {
               .exchange();
       created.assertThat().hasStatus(HttpStatus.CREATED);
       final var teamId =
-          jsonMapper.readValue(created.getResponse().getContentAsByteArray(), TeamId.class);
+          jsonMapper.readValue(created.getResponse().getContentAsByteArray(), CreateTeamRes.class).id();
 
       mockMvcTester
           .delete()

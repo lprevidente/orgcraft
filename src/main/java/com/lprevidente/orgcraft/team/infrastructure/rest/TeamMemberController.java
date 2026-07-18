@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,30 +31,36 @@ class TeamMemberController {
   private final RevokeTeamMemberAdminHandler revokeTeamMemberAdminHandler;
 
   @GetMapping
+  @PreAuthorize("hasPermission(#teamId, 'team', 'manage')")
   Collection<TeamMemberView> getTeamMembers(@PathVariable TeamId teamId) {
     return teamMemberQueryService.getTeamMembers(teamId);
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  void addMember(@RequestBody @Valid AddUserToTeam command) {
+  @PreAuthorize("hasPermission(#teamId, 'team', 'manage')")
+  void addMember(@PathVariable TeamId teamId, @RequestBody @Valid AddUserToTeam command) {
     addUserToTeamHandler.handle(command);
   }
 
   @DeleteMapping("{userId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("hasPermission(#teamId, 'team', 'manage')")
   void removeMemberFromTeam(@PathVariable TeamId teamId, @PathVariable UserId userId) {
     removeUserFromTeamHandler.handle(new RemoveUserFromTeam(teamId, userId));
   }
 
+  // Only an org admin may promote a member to team admin.
   @PutMapping("{userId}/admin")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("hasPermission(@tenant.organizationId(), 'organization', 'manage')")
   void promoteToAdmin(@PathVariable TeamId teamId, @PathVariable UserId userId) {
     promoteTeamMemberToAdminHandler.handle(new PromoteTeamMemberToAdmin(teamId, userId));
   }
 
   @DeleteMapping("{userId}/admin")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("hasPermission(@tenant.organizationId(), 'organization', 'manage')")
   void revokeAdmin(@PathVariable TeamId teamId, @PathVariable UserId userId) {
     revokeTeamMemberAdminHandler.handle(new RevokeTeamMemberAdmin(teamId, userId));
   }

@@ -18,6 +18,9 @@ definition team {
   relation creator: user
   relation admin: user
   relation member: user
+
+  permission view = admin + member + organization -> manage
+  permission manage = admin + organization -> manage
 }
 
 definition office {
