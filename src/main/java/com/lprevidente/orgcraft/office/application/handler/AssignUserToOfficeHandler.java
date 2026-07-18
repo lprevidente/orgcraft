@@ -1,8 +1,8 @@
 package com.lprevidente.orgcraft.office.application.handler;
 
 import com.lprevidente.orgcraft.office.application.command.AssignUserToOffice;
+import com.lprevidente.orgcraft.office.application.command.AssignUserToOfficeRes;
 import com.lprevidente.orgcraft.office.domain.OfficeAssignment;
-import com.lprevidente.orgcraft.office.domain.OfficeAssignmentId;
 import com.lprevidente.orgcraft.office.domain.OfficeAssignments;
 import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.Offices;
@@ -23,7 +23,7 @@ public class AssignUserToOfficeHandler {
   private final UserApi userApi;
 
   @CommandHandler
-  public OfficeAssignmentId handle(AssignUserToOffice command) {
+  public AssignUserToOfficeRes handle(AssignUserToOffice command) {
     final var officeId = new OfficeId(command.officeId());
     final var userId = new UserId(command.userId());
 
@@ -42,6 +42,6 @@ public class AssignUserToOfficeHandler {
 
     final var assignment = new OfficeAssignment(officeId, userId);
     officeAssignments.save(assignment);
-    return assignment.getId();
+    return new AssignUserToOfficeRes(assignment.getId());
   }
 }

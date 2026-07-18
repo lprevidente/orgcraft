@@ -5,6 +5,7 @@ import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Permission;
 import com.lprevidente.orgcraft.common.authorization.SpiceDbSchema.Type;
 import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.application.command.CreateOffice;
+import com.lprevidente.orgcraft.office.application.command.CreateOfficeRes;
 import com.lprevidente.orgcraft.office.application.command.DeleteOffice;
 import com.lprevidente.orgcraft.office.application.handler.CreateOfficeHandler;
 import com.lprevidente.orgcraft.office.application.handler.DeleteOfficeHandler;
@@ -44,12 +45,10 @@ class OfficeController {
     return officeQueryService.getById(id);
   }
 
-  // An office is created under the current tenant's organization, so only a manager (admin) of that
-  // organization may create one.
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasPermission(@tenant.organizationId(), 'organization', 'manage')")
-  OfficeId createOffice(
+  CreateOfficeRes createOffice(
       @RequestBody @Valid CreateOffice command,
       @AuthenticationPrincipal(expression = "id") UserId creator) {
     return createOfficeHandler.handle(command, creator);

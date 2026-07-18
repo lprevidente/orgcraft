@@ -2,6 +2,7 @@ package com.lprevidente.orgcraft.office.infrastructure.rest;
 
 import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.application.command.AssignUserToOffice;
+import com.lprevidente.orgcraft.office.application.command.AssignUserToOfficeRes;
 import com.lprevidente.orgcraft.office.application.command.PromoteOfficeOccupantToAdmin;
 import com.lprevidente.orgcraft.office.application.command.RemoveUserFromOffice;
 import com.lprevidente.orgcraft.office.application.command.RevokeOfficeOccupantAdmin;
@@ -12,7 +13,6 @@ import com.lprevidente.orgcraft.office.application.handler.RevokeOfficeOccupantA
 import com.lprevidente.orgcraft.office.application.projection.OfficeAssignmentView;
 import com.lprevidente.orgcraft.office.application.projection.OfficeMemberView;
 import com.lprevidente.orgcraft.office.application.query.OfficeAssignmentQueryService;
-import com.lprevidente.orgcraft.office.domain.OfficeAssignmentId;
 import com.lprevidente.orgcraft.user.api.UserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ class OfficeAssignmentController {
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping("/api/v1/offices/{officeId}/members")
   @PreAuthorize("hasPermission(#officeId, 'office', 'manage')")
-  OfficeAssignmentId assignUser(@PathVariable UUID officeId, @RequestBody @Valid AssignUserToOffice command) {
+  AssignUserToOfficeRes assignUser(@PathVariable UUID officeId, @RequestBody @Valid AssignUserToOffice command) {
     return assignHandler.handle(command);
   }
 

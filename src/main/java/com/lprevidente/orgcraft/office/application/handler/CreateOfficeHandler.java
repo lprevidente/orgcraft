@@ -1,8 +1,8 @@
 package com.lprevidente.orgcraft.office.application.handler;
 
 import com.lprevidente.orgcraft.office.application.command.CreateOffice;
+import com.lprevidente.orgcraft.office.application.command.CreateOfficeRes;
 import com.lprevidente.orgcraft.office.domain.Office;
-import com.lprevidente.orgcraft.office.api.OfficeId;
 import com.lprevidente.orgcraft.office.domain.Offices;
 import com.lprevidente.orgcraft.organization.api.OrganizationId;
 import com.lprevidente.orgcraft.tenancy.api.TenantContext;
@@ -18,10 +18,10 @@ public class CreateOfficeHandler {
   private final Offices offices;
 
   @CommandHandler
-  public OfficeId handle(CreateOffice command, UserId creator) {
+  public CreateOfficeRes handle(CreateOffice command, UserId creator) {
     final var office = new Office(command.name(), command.address(), creator, currentOrganization());
     offices.save(office);
-    return office.getId();
+    return new CreateOfficeRes(office.getId());
   }
 
   private OrganizationId currentOrganization() {

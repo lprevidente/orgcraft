@@ -79,8 +79,8 @@ Content-Type: application/json
 }
 
 > {%
-    client.global.set("officeId", response.body);
-    client.log("officeId=" + response.body);
+    client.global.set("officeId", response.body.id);
+    client.log("officeId=" + response.body.id);
 %}
 
 ### 7. Assign the user to the office → writes office:{id}#occupant@user:{user}

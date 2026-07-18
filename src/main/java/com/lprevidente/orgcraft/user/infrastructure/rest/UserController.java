@@ -11,10 +11,12 @@ import com.lprevidente.orgcraft.user.application.handler.UpdateUserHandler;
 import com.lprevidente.orgcraft.user.application.projection.UserView;
 import com.lprevidente.orgcraft.user.application.query.UserQueryService;
 import jakarta.validation.Valid;
-import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ class UserController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("hasPermission(@tenant.organizationId(), 'organization', 'manage')")
   CreateUserRes createUser(@RequestBody @Valid CreateUserReq command) {
     return addUserHandler.handle(command);
   }
@@ -49,6 +52,7 @@ class UserController {
 
   @DeleteMapping("{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("hasPermission(@tenant.organizationId(), 'organization', 'manage')")
   void deleteUser(@PathVariable UserId id) {
     deleteUserHandler.handle(new DeleteUser(id));
   }

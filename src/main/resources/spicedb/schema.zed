@@ -1,4 +1,6 @@
-definition user {}
+definition user {
+    permission manage = organization -> manage + office -> manage
+}
 
 definition organization {
   relation admin: user

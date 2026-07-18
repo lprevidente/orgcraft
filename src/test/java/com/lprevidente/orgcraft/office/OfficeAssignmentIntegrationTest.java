@@ -102,6 +102,7 @@ class OfficeAssignmentIntegrationTest extends BaseIntegrationTest {
           .assertThat()
           .hasStatus(HttpStatus.CREATED)
           .bodyJson()
+          .extractingPath("$.id")
           .isNotNull();
 
       mockMvcTester

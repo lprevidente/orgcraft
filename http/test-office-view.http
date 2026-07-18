@@ -84,8 +84,8 @@ Content-Type: application/json
 
 > {%
     client.test("Org admin creates office", function () { client.assert(response.status === 201, "expected 201, got " + response.status); });
-    client.global.set("officeId", response.body);
-    client.log("officeId=" + response.body);
+    client.global.set("officeId", response.body.id);
+    client.log("officeId=" + response.body.id);
 %}
 
 ### V6. Fran adds Adam as occupant of HQ → 201 (org admin can add members)
