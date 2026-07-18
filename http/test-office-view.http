@@ -1,0 +1,206 @@
+### ═══════════════════════════════════════════════════════════════════
+### Authorization workflow — org admin ▸ office admin ▸ occupant
+###
+### Schema:
+###   organization  manage = admin
+###   office        view   = admin + occupant + organization->manage
+###                 manage = admin + organization->manage
+###
+### Actors (org "workflowco"):
+###   • Fran  — founder ⇒ ORG admin
+###   • Adam  — promoted to OFFICE admin of HQ (by Fran, the org admin)
+###   • Otto  — plain occupant of HQ (added by Adam, the office admin)
+###
+### Rules verified:
+###   • only org admin creates offices        (Adam create → 403, Fran → 201)
+###   • org admin makes a user office admin    (Fran promote Adam → 204)
+###   • office admin CAN add members           (Adam add Otto → 201)
+###   • only ORG admin can promote to admin    (Adam promote Otto → 403)
+###   • occupant cannot manage                 (Otto add/delete → 403)
+###   • view: admin, occupant, org admin        (all GET → 200)
+###   • only org admin deletes the org          (Otto → 403, Fran → 204)
+###
+### Self-contained. Run top-to-bottom. Requires the app up with
+### orgcraft.spicedb.enabled=true and SpiceDB reachable — with SpiceDB
+### disabled the permit-all fallback lets every check pass, so the 403s
+### won't happen and the assertions become meaningless.
+### NOTE: SpiceDB tuples are written by async module-event listeners, so
+###       let each write settle before the verifying read (top-to-bottom
+###       manual execution is plenty).
+### ═══════════════════════════════════════════════════════════════════
+
+@host = http://127.0.0.1:8080
+@wfSlug = workflowco
+@franEmail = fran@workflowco.com
+@wfPassword = Password@123
+@adamEmail = adam@workflowco.com
+@ottoEmail = otto@workflowco.com
+
+### V1. Register org (public) → Fran becomes ORG admin
+POST {{host}}/api/v1/organizations
+Content-Type: application/json
+
+{
+  "name": "WorkflowCo",
+  "slug": "{{wfSlug}}",
+  "founderFirstName": "Fran",
+  "founderLastName": "Founder",
+  "founderEmail": "{{franEmail}}",
+  "founderPassword": "{{wfPassword}}"
+}
+
+> {%
+    client.global.set("wfOrgId", response.body.organizationId);
+    client.log("wfOrgId=" + response.body.organizationId);
+%}
+
+### V2. Login as Fran (org admin)
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{franEmail}}&password={{wfPassword}}&tenant={{wfSlug}}
+
+### V3. Create Adam (future office admin)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Adam", "lastName": "Admin", "email": "{{adamEmail}}", "password": "{{wfPassword}}" }
+
+> {% client.global.set("adamId", response.body.id); client.log("adamId=" + response.body.id); %}
+
+### V4. Create Otto (future occupant)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Otto", "lastName": "Occupant", "email": "{{ottoEmail}}", "password": "{{wfPassword}}" }
+
+> {% client.global.set("ottoId", response.body.id); client.log("ottoId=" + response.body.id); %}
+
+### V5. Fran (org admin) creates office HQ → 201
+POST {{host}}/api/v1/offices
+Content-Type: application/json
+
+{ "name": "HQ Office", "address": { "address": "Via Roma 1", "city": "Rome", "country": "Italy" } }
+
+> {%
+    client.test("Org admin creates office", function () { client.assert(response.status === 201, "expected 201, got " + response.status); });
+    client.global.set("officeId", response.body.id);
+    client.log("officeId=" + response.body.id);
+%}
+
+### V6. Fran adds Adam as occupant of HQ → 201 (org admin can add members)
+POST {{host}}/api/v1/offices/{{officeId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{officeId}}", "userId": "{{adamId}}" }
+
+> {% client.test("Org admin adds Adam", function () { client.assert(response.status === 201, "expected 201, got " + response.status); }); %}
+
+### V7. Fran promotes Adam to OFFICE admin → 204 (only org admin may promote)
+PUT {{host}}/api/v1/offices/{{officeId}}/members/{{adamId}}/admin
+
+> {% client.test("Org admin promotes Adam to office admin", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}
+
+### V8. Fran lists offices → sees HQ via organization->manage (1)
+GET {{host}}/api/v1/offices
+
+> {%
+    client.test("Org admin sees HQ through the org hierarchy", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 1, "expected 1, got " + response.body.length);
+        client.assert(response.body[0].id === client.global.get("officeId"), "should be HQ");
+    });
+%}
+
+### ── As Adam (OFFICE admin of HQ) ───────────────────────────────────
+
+### V9. Login as Adam
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{adamEmail}}&password={{wfPassword}}&tenant={{wfSlug}}
+
+### V10. Adam lists offices → sees HQ (admin ⇒ view) (1)
+GET {{host}}/api/v1/offices
+
+> {%
+    client.test("Office admin sees HQ", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 1, "expected 1, got " + response.body.length);
+    });
+%}
+
+### V11. Adam adds Otto as occupant → 201  ← office admin CAN add members
+POST {{host}}/api/v1/offices/{{officeId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{officeId}}", "userId": "{{ottoId}}" }
+
+> {% client.test("Office admin adds a member", function () { client.assert(response.status === 201, "expected 201, got " + response.status); }); %}
+
+### V12. Adam tries to promote Otto to admin → 403  ← only ORG admin may promote
+PUT {{host}}/api/v1/offices/{{officeId}}/members/{{ottoId}}/admin
+
+> {% client.test("Office admin CANNOT promote", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### V13. Adam tries to create another office → 403 (office admin is not org admin)
+POST {{host}}/api/v1/offices
+Content-Type: application/json
+
+{ "name": "Branch Office", "address": { "address": "Via Milano 2", "city": "Milan", "country": "Italy" } }
+
+> {% client.test("Office admin CANNOT create offices", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### ── As Otto (plain occupant of HQ) ─────────────────────────────────
+
+### V14. Login as Otto
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{ottoEmail}}&password={{wfPassword}}&tenant={{wfSlug}}
+
+### V15. Otto views HQ → 200 (occupant ⇒ view)
+GET {{host}}/api/v1/offices/{{officeId}}
+
+> {% client.test("Occupant views HQ", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### V16. Otto lists offices → sees HQ (1)
+GET {{host}}/api/v1/offices
+
+> {%
+    client.test("Occupant sees HQ", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 1, "expected 1, got " + response.body.length);
+    });
+%}
+
+### V17. Otto tries to add a member → 403 (occupant has no manage)
+POST {{host}}/api/v1/offices/{{officeId}}/members
+Content-Type: application/json
+
+{ "officeId": "{{officeId}}", "userId": "{{adamId}}" }
+
+> {% client.test("Occupant CANNOT add members", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### V18. Otto tries to delete HQ → 403 (occupant ≠ manage)
+DELETE {{host}}/api/v1/offices/{{officeId}}
+
+> {% client.test("Occupant CANNOT delete the office", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### V19. Otto tries to delete the org → 403 (not org admin)
+DELETE {{host}}/api/v1/organizations/{{wfOrgId}}
+
+> {% client.test("Occupant CANNOT delete the org", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### ── Teardown (only org admin may delete the org) ───────────────────
+
+### V20. Login as Fran (org admin)
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{franEmail}}&password={{wfPassword}}&tenant={{wfSlug}}
+
+### V21. Fran deletes the org → 204. Cascades: HQ office + all org tuples removed.
+DELETE {{host}}/api/v1/organizations/{{wfOrgId}}
+
+> {% client.test("Org admin deletes the org", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}

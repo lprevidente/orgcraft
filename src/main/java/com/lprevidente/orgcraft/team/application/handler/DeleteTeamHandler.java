@@ -18,6 +18,7 @@ public class DeleteTeamHandler {
         teams
             .findById(command.id()) //
             .orElseThrow(() -> new TeamNotFoundException(command.id()));
+    team.delete();
     teams.delete(team);
   }
 }

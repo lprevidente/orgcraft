@@ -16,4 +16,9 @@ public interface UserApi {
   <T> Optional<T> findByEmail(String email, Class<T> clazz);
 
   <T extends UserIdDto> Map<UUID, T> findAllById(Collection<UUID> ids, Class<T> clazz);
+
+  void register(UserId id, String firstName, String lastName, String email, String plainPassword);
+
+  /** Deletes every user of the current tenant. Used to cascade an organization deletion. */
+  void deleteAllInCurrentTenant();
 }

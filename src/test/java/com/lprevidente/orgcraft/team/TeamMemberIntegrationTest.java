@@ -1,17 +1,24 @@
 package com.lprevidente.orgcraft.team;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.lprevidente.orgcraft.BaseIntegrationTest;
 import com.lprevidente.orgcraft.team.application.command.AddUserToTeam;
+import com.lprevidente.orgcraft.team.domain.event.RemovedUserFromTeam;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.context.jdbc.Sql;
 
-@WithMockUser
+@RecordApplicationEvents
+@WithUserDetails(value = "mario.rossi@example.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
 @Sql(
     value = {"/users.sql", "/team.sql", "/team_members.sql"},
     executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
@@ -25,7 +32,7 @@ class TeamMemberIntegrationTest extends BaseIntegrationTest {
   private static final UUID NON_EXISTENT_USER_ID_UUID = UUID.fromString("88888888-8888-8888-8888-888888888888");
 
   @Nested
-  @DisplayName("GET /api/teams/{teamId}/members")
+  @DisplayName("GET /api/teams/{id}/members")
   class GetTeamMembersTest {
 
     @Test
@@ -75,7 +82,7 @@ class TeamMemberIntegrationTest extends BaseIntegrationTest {
   }
 
   @Nested
-  @DisplayName("POST /api/teams/{teamId}/members")
+  @DisplayName("POST /api/teams/{id}/members")
   class AddTeamMemberTest {
 
     @Test
@@ -126,7 +133,7 @@ class TeamMemberIntegrationTest extends BaseIntegrationTest {
           .post()
           .uri("/api/teams/{teamId}/members", EXISTING_TEAM_ID_UUID)
           .contentType(MediaType.APPLICATION_JSON)
-          .content("{\"teamId\":\"" + EXISTING_TEAM_ID_UUID + "\",\"userId\":null}")
+          .content("{\"id\":\"" + EXISTING_TEAM_ID_UUID + "\",\"userId\":null}")
           .exchange()
           .assertThat()
           .hasStatus(HttpStatus.BAD_REQUEST);
@@ -139,7 +146,7 @@ class TeamMemberIntegrationTest extends BaseIntegrationTest {
           .post()
           .uri("/api/teams/{teamId}/members", EXISTING_TEAM_ID_UUID)
           .contentType(MediaType.APPLICATION_JSON)
-          .content("{\"teamId\":null,\"userId\":\"" + NEW_USER_ID_UUID + "\"}")
+          .content("{\"id\":null,\"userId\":\"" + NEW_USER_ID_UUID + "\"}")
           .exchange()
           .assertThat()
           .hasStatus(HttpStatus.BAD_REQUEST);
@@ -190,12 +197,12 @@ class TeamMemberIntegrationTest extends BaseIntegrationTest {
   }
 
   @Nested
-  @DisplayName("DELETE /api/teams/{teamId}/members/{userId}")
+  @DisplayName("DELETE /api/teams/{id}/members/{userId}")
   class RemoveTeamMemberTest {
 
     @Test
     @DisplayName("Should remove user from team when user is a member")
-    void shouldRemoveUserFromTeamWhenUserIsMember() {
+    void shouldRemoveUserFromTeamWhenUserIsMember(ApplicationEvents events) {
       mockMvcTester
           .delete()
           .uri("/api/teams/{teamId}/members/{userId}", EXISTING_TEAM_ID_UUID, EXISTING_USER_ID_UUID)
@@ -213,6 +220,14 @@ class TeamMemberIntegrationTest extends BaseIntegrationTest {
           .extractingPath("$")
           .asArray()
           .hasSize(1);
+
+      assertThat(events.stream(RemovedUserFromTeam.class))
+          .singleElement()
+          .satisfies(
+              e -> {
+                assertThat(e.teamId().id()).isEqualTo(EXISTING_TEAM_ID_UUID);
+                assertThat(e.userId().id()).isEqualTo(EXISTING_USER_ID_UUID);
+              });
     }
 
     @Test

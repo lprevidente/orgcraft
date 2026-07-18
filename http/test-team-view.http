@@ -1,0 +1,222 @@
+### ═══════════════════════════════════════════════════════════════════
+### Team authorization — org admin ▸ team admin ▸ member
+###
+### Schema:
+###   team  view   = admin + member + organization->manage
+###         manage = admin + organization->manage
+###
+### Actors (org "teamflowco"):
+###   • Fran — founder ⇒ ORG admin
+###   • Adam — promoted to TEAM admin of Dev (by Fran, the org admin)
+###   • Otto — plain member of Dev (added by Adam, the team admin)
+###
+### Rules verified:
+###   • only org admin creates teams           (Adam create → 403, Fran → 201)
+###   • org admin makes a user team admin       (Fran promote Adam → 204)
+###   • team admin CAN add members              (Adam add Otto → 201)
+###   • only ORG admin can promote to admin     (Adam promote Otto → 403)
+###   • member cannot manage                    (Otto add/members/delete → 403)
+###   • view: admin, member, org admin          (all GET → 200)
+###   • members list needs manage               (Fran/Adam → 200, Otto → 403)
+###
+### Self-contained. Run top-to-bottom. Requires the app up with
+### orgcraft.spicedb.enabled=true and SpiceDB reachable — with SpiceDB
+### disabled the permit-all fallback lets every check pass, so the 403s
+### won't happen and the assertions become meaningless.
+### NOTE: SpiceDB tuples are written by async module-event listeners, so
+###       let each write settle before the verifying read (top-to-bottom
+###       manual execution is plenty).
+### NOTE: team-member endpoints live under /api/teams (no /v1), while team
+###       CRUD lives under /api/v1/teams.
+### ═══════════════════════════════════════════════════════════════════
+
+@host = http://127.0.0.1:8080
+@slug = teamflowco
+@franEmail = fran@teamflowco.com
+@pwd = Password@123
+@adamEmail = adam@teamflowco.com
+@ottoEmail = otto@teamflowco.com
+
+### T1. Register org (public) → Fran becomes ORG admin
+POST {{host}}/api/v1/organizations
+Content-Type: application/json
+
+{
+  "name": "TeamFlowCo",
+  "slug": "{{slug}}",
+  "founderFirstName": "Fran",
+  "founderLastName": "Founder",
+  "founderEmail": "{{franEmail}}",
+  "founderPassword": "{{pwd}}"
+}
+
+> {%
+    client.global.set("orgId", response.body.organizationId);
+    client.log("orgId=" + response.body.organizationId);
+%}
+
+### T2. Login as Fran (org admin)
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{franEmail}}&password={{pwd}}&tenant={{slug}}
+
+### T3. Fran creates Adam (future team admin)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Adam", "lastName": "Admin", "email": "{{adamEmail}}", "password": "{{pwd}}" }
+
+> {% client.global.set("adamId", response.body.id); %}
+
+### T4. Fran creates Otto (future member)
+POST {{host}}/api/v1/users
+Content-Type: application/json
+
+{ "firstName": "Otto", "lastName": "Member", "email": "{{ottoEmail}}", "password": "{{pwd}}" }
+
+> {% client.global.set("ottoId", response.body.id); %}
+
+### T5. Fran (org admin) creates team Dev → 201
+POST {{host}}/api/v1/teams
+Content-Type: application/json
+
+{ "name": "Dev Team" }
+
+> {%
+    client.test("Org admin creates team", function () { client.assert(response.status === 201, "expected 201, got " + response.status); });
+    client.global.set("teamId", response.body.id);
+    client.log("teamId=" + response.body.id);
+%}
+
+### T6. Fran adds Adam as member of Dev → 201 (org admin can add members)
+POST {{host}}/api/teams/{{teamId}}/members
+Content-Type: application/json
+
+{ "teamId": "{{teamId}}", "userId": "{{adamId}}" }
+
+> {% client.test("Org admin adds Adam", function () { client.assert(response.status === 201, "expected 201, got " + response.status); }); %}
+
+### T7. Fran promotes Adam to TEAM admin → 204 (only org admin may promote)
+PUT {{host}}/api/teams/{{teamId}}/members/{{adamId}}/admin
+
+> {% client.test("Org admin promotes Adam to team admin", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}
+
+### T8. Fran lists teams → sees Dev via organization->manage (1)
+GET {{host}}/api/v1/teams
+
+> {%
+    client.test("Org admin sees Dev through the org hierarchy", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 1, "expected 1, got " + response.body.length);
+        client.assert(response.body[0].id === client.global.get("teamId"), "should be Dev");
+    });
+%}
+
+### T9. Fran views the single team → 200
+GET {{host}}/api/v1/teams/{{teamId}}
+
+> {% client.test("Org admin views the team", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### T10. Fran views Dev members → 200 (org admin ⇒ manage)
+GET {{host}}/api/teams/{{teamId}}/members
+
+> {% client.test("Org admin views members", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### ── As Adam (TEAM admin of Dev) ─────────────────────────────────────
+
+### T11. Login as Adam
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{adamEmail}}&password={{pwd}}&tenant={{slug}}
+
+### T12. Adam lists teams → sees Dev (admin ⇒ view) (1)
+GET {{host}}/api/v1/teams
+
+> {%
+    client.test("Team admin sees Dev", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 1, "expected 1, got " + response.body.length);
+    });
+%}
+
+### T13. Adam adds Otto as member → 201  ← team admin CAN add members
+POST {{host}}/api/teams/{{teamId}}/members
+Content-Type: application/json
+
+{ "teamId": "{{teamId}}", "userId": "{{ottoId}}" }
+
+> {% client.test("Team admin adds a member", function () { client.assert(response.status === 201, "expected 201, got " + response.status); }); %}
+
+### T14. Adam views Dev members → 200 (team admin ⇒ manage)
+GET {{host}}/api/teams/{{teamId}}/members
+
+> {% client.test("Team admin views members", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### T15. Adam tries to promote Otto to admin → 403  ← only ORG admin may promote
+PUT {{host}}/api/teams/{{teamId}}/members/{{ottoId}}/admin
+
+> {% client.test("Team admin CANNOT promote", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### T16. Adam tries to create another team → 403 (team admin is not org admin)
+POST {{host}}/api/v1/teams
+Content-Type: application/json
+
+{ "name": "Sales Team" }
+
+> {% client.test("Team admin CANNOT create teams", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### ── As Otto (plain member of Dev) ───────────────────────────────────
+
+### T17. Login as Otto
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{ottoEmail}}&password={{pwd}}&tenant={{slug}}
+
+### T18. Otto views Dev → 200 (member ⇒ view)
+GET {{host}}/api/v1/teams/{{teamId}}
+
+> {% client.test("Member views Dev", function () { client.assert(response.status === 200, "got " + response.status); }); %}
+
+### T19. Otto lists teams → sees Dev (1)
+GET {{host}}/api/v1/teams
+
+> {%
+    client.test("Member sees Dev", function () {
+        client.assert(response.status === 200, "status was " + response.status);
+        client.assert(response.body.length === 1, "expected 1, got " + response.body.length);
+    });
+%}
+
+### T20. Otto tries to view the members list → 403 (list needs manage)
+GET {{host}}/api/teams/{{teamId}}/members
+
+> {% client.test("Member CANNOT view the members list", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### T21. Otto tries to add a member → 403 (member has no manage)
+POST {{host}}/api/teams/{{teamId}}/members
+Content-Type: application/json
+
+{ "teamId": "{{teamId}}", "userId": "{{adamId}}" }
+
+> {% client.test("Member CANNOT add members", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### T22. Otto tries to delete the team → 403 (member ≠ manage)
+DELETE {{host}}/api/v1/teams/{{teamId}}
+
+> {% client.test("Member CANNOT delete the team", function () { client.assert(response.status === 403, "expected 403, got " + response.status); }); %}
+
+### ── Teardown (only org admin may delete the org) ────────────────────
+
+### T23. Login as Fran (org admin)
+POST {{host}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{franEmail}}&password={{pwd}}&tenant={{slug}}
+
+### T24. Fran deletes the org → 204. Cascades: Dev team + all tuples removed.
+DELETE {{host}}/api/v1/organizations/{{orgId}}
+
+> {% client.test("Org admin deletes the org", function () { client.assert(response.status === 204, "expected 204, got " + response.status); }); %}

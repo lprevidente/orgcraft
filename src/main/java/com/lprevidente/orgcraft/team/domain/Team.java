@@ -1,35 +1,73 @@
 package com.lprevidente.orgcraft.team.domain;
 
+import com.lprevidente.orgcraft.organization.api.OrganizationId;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.event.TeamCreated;
+import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
+import com.lprevidente.orgcraft.user.api.UserId;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.Objects;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.TenantId;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.jmolecules.ddd.annotation.Identity;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.util.Assert;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Getter
 @AggregateRoot
 @Table(name = "teams")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Team extends AbstractAggregateRoot<Team> {
 
   @Identity private TeamId id;
 
+  @Column(nullable = false)
   private String name;
+
+  @Column(nullable = false, columnDefinition = "timestamp")
   private LocalDateTime createdAt;
 
-  protected Team() {}
+  @Nullable
+  @AttributeOverride(name = "id", column = @Column(name = "creator_id"))
+  private UserId creator;
 
-  public Team(String name) {
+  @TenantId
+  @Column(name = "tenant_id", nullable = false, updatable = false)
+  private String tenantId;
+
+  public Team(String name, UserId creator, OrganizationId organization) {
     Assert.hasText(name, "name must not be null or empty");
+    Assert.notNull(creator, "creator must not be null");
+    Assert.notNull(organization, "organization must not be null");
 
     this.id = new TeamId();
     this.name = name;
     this.createdAt = LocalDateTime.now();
+    this.creator = creator;
 
-    registerEvent(new TeamCreated(this));
+    // organization == tenant; passed explicitly because @TenantId is only set on persist,
+    // and SpiceDB needs it now to wire team -> organization in the published event.
+    registerEvent(new TeamCreated(this.id, creator, organization));
+  }
+
+  /**
+   * Registers the {@link TeamDeleted} event; call before removing the aggregate via its repository.
+   */
+  public void delete() {
+    registerEvent(new TeamDeleted(this.id));
+  }
+
+  /** Orphans the creator (nulls it) when the creator's user account is deleted; the team survives. */
+  public void removeCreator() {
+    this.creator = null;
   }
 
   @Override

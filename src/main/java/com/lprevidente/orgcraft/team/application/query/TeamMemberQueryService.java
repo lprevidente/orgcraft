@@ -2,7 +2,7 @@ package com.lprevidente.orgcraft.team.application.query;
 
 import com.lprevidente.orgcraft.team.application.projection.MemberView;
 import com.lprevidente.orgcraft.team.application.projection.TeamMemberView;
-import com.lprevidente.orgcraft.team.domain.TeamId;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.domain.TeamMemberId;
 import com.lprevidente.orgcraft.user.api.UserId;
 import com.lprevidente.orgcraft.user.api.UserApi;

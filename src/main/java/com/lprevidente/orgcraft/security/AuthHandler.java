@@ -1,5 +1,7 @@
 package com.lprevidente.orgcraft.security;
 
+import com.lprevidente.orgcraft.tenancy.api.TenantContext;
+import com.lprevidente.orgcraft.tenancy.api.TenantContextFilter;
 import com.lprevidente.orgcraft.user.api.UserApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +39,11 @@ class AuthHandler implements AuthenticationSuccessHandler, AuthenticationFailure
       HttpServletRequest req,
       HttpServletResponse res,
       Authentication authentication) throws IOException {
+
+    final var tenantId = TenantContext.get();
+    if (tenantId != null) {
+      req.getSession(true).setAttribute(TenantContextFilter.SESSION_TENANT_ATTRIBUTE, tenantId);
+    }
 
     res.setContentType(MediaType.APPLICATION_JSON_VALUE);
     final var authRes = new AuthRes(true, null);

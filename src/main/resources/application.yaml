@@ -22,6 +22,20 @@ spring:
     virtual:
       enabled: true
 
-logging:
-  level:
-    org.springframework.security: TRACE
+  # Spring Modulith event publication registry
+  modulith:
+    events:
+      # Recover publications stuck in-flight (e.g. JVM killed mid-processing) by
+      # marking them FAILED so the resubmit job below can retry them.
+      staleness:
+        check-intervall: 1m   # how often to scan for stale publications
+        published: 5m         # PUBLISHED rows never picked up within 5m are stale
+        processing: 5m        # PROCESSING rows not completed within 5m are stale
+        resubmitted: 5m       # RESUBMITTED rows not completed within 5m are stale
+
+orgcraft:
+  spicedb:
+    enabled: true
+    endpoint: localhost:50051
+    preshared-key: orgcraft-dev-key
+    plaintext: true

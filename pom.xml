@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.5</version>
+    <version>4.1.0</version>
     <relativePath/>
   </parent>
 
@@ -18,7 +18,7 @@
 
   <properties>
     <java.version>25</java.version>
-    <spring-modulith.version>2.0.5</spring-modulith.version>
+    <spring-modulith.version>2.1.0</spring-modulith.version>
     <blaze-persistence.version>1.6.18</blaze-persistence.version>
     <jmolecules.version>2025.0.2</jmolecules.version>
   </properties>
@@ -28,6 +28,24 @@
     <dependency>
       <groupId>org.springframework.session</groupId>
       <artifactId>spring-session-jdbc</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.authzed.api</groupId>
+      <artifactId>authzed</artifactId>
+      <version>1.3.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty-shaded</artifactId>
+      <version>1.80.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-stub</artifactId>
+      <version>1.80.0</version>
     </dependency>
 
     <dependency>
@@ -93,6 +111,13 @@
     <dependency>
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-starter-jpa</artifactId>
+    </dependency>
+
+    <!-- Promoted to compile scope (transitively runtime via starter-jpa) so we can drive the
+         EventPublicationRegistry SPI directly for attempt-capped retry + dead-lettering. -->
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-events-core</artifactId>
     </dependency>
 
     <dependency>

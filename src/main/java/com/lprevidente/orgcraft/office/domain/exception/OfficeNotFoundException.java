@@ -1,7 +1,7 @@
 package com.lprevidente.orgcraft.office.domain.exception;
 
 import com.lprevidente.orgcraft.common.exception.DomainException;
-import com.lprevidente.orgcraft.office.domain.OfficeId;
+import com.lprevidente.orgcraft.office.api.OfficeId;
 import org.springframework.http.HttpStatus;
 
 public class OfficeNotFoundException extends DomainException {

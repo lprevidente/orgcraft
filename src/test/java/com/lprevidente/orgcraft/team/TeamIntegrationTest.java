@@ -1,18 +1,31 @@
 package com.lprevidente.orgcraft.team;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.lprevidente.orgcraft.BaseIntegrationTest;
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.application.command.CreateTeam;
+import com.lprevidente.orgcraft.team.application.command.CreateTeamRes;
+import com.lprevidente.orgcraft.team.domain.event.TeamDeleted;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.context.jdbc.Sql;
 
-@WithMockUser
-@Sql(value = "/team.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
+// Resolved at TEST_EXECUTION so the @BeforeEach tenant context is set before the tenant-filtered
+// user lookup runs; gives a real UserDetailsView principal whose getId() feeds @AuthenticationPrincipal.
+@RecordApplicationEvents
+@WithUserDetails(value = "mario.rossi@example.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+@Sql(
+    value = {"/users.sql", "/team.sql"},
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
 class TeamIntegrationTest extends BaseIntegrationTest {
 
   private static final UUID EXISTING_TEAM_ID_UUID = UUID.fromString("44444444-4444-4444-4444-444444444444");
@@ -57,6 +70,7 @@ class TeamIntegrationTest extends BaseIntegrationTest {
           .assertThat()
           .hasStatus(HttpStatus.CREATED)
           .bodyJson()
+          .extractingPath("$.id")
           .isNotNull();
 
       mockMvcTester
@@ -137,6 +151,32 @@ class TeamIntegrationTest extends BaseIntegrationTest {
           .extractingPath("$[*].name")
           .asArray()
           .doesNotContain("Development Team");
+    }
+
+    @Test
+    @DisplayName("Should publish TeamDeleted event so authorization tuples can be cleaned up")
+    void shouldPublishTeamDeletedEvent(ApplicationEvents events) {
+      // Self-contained team so this test never collides with the shared seed teams.
+      final var created =
+          mockMvcTester
+              .post()
+              .uri("/api/v1/teams")
+              .contentType(MediaType.APPLICATION_JSON)
+              .content(jsonMapper.writeValueAsString(new CreateTeam("Ephemeral Team")))
+              .exchange();
+      created.assertThat().hasStatus(HttpStatus.CREATED);
+      final var teamId =
+          jsonMapper.readValue(created.getResponse().getContentAsByteArray(), CreateTeamRes.class).id();
+
+      mockMvcTester
+          .delete()
+          .uri("/api/v1/teams/{id}", teamId.id())
+          .exchange()
+          .assertThat()
+          .hasStatus(HttpStatus.NO_CONTENT);
+
+      assertThat(events.stream(TeamDeleted.class).map(e -> e.id().id()))
+          .containsExactly(teamId.id());
     }
 
     @Test

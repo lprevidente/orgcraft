@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +22,13 @@ class GlobalExceptionHandler {
     final var problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     problemDetail.setTitle("Resource Not Found");
+    return problemDetail;
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  ProblemDetail handleAccessDeniedException(AccessDeniedException ex) {
+    final var problemDetail = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+    problemDetail.setTitle("Forbidden");
     return problemDetail;
   }
 

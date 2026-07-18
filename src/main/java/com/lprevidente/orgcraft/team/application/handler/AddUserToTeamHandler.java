@@ -1,12 +1,13 @@
 package com.lprevidente.orgcraft.team.application.handler;
 
+import com.lprevidente.orgcraft.team.api.TeamId;
 import com.lprevidente.orgcraft.team.application.command.AddUserToTeam;
 import com.lprevidente.orgcraft.team.domain.*;
 import com.lprevidente.orgcraft.user.api.UserApi;
+import com.lprevidente.orgcraft.user.api.UserId;
 import lombok.RequiredArgsConstructor;
 import org.jmolecules.architecture.cqrs.CommandHandler;
 import org.jmolecules.ddd.annotation.Service;
-import com.lprevidente.orgcraft.user.api.UserId;
 
 @Service
 @RequiredArgsConstructor

@@ -1,0 +1,34 @@
+definition user {
+  relation organization: organization
+  relation office: office
+
+  permission view = organization -> manage + office -> manage
+  permission manage = organization -> manage
+}
+
+definition organization {
+  relation admin: user
+  relation member: user
+
+  permission manage = admin
+}
+
+definition team {
+  relation organization: organization
+  relation creator: user
+  relation admin: user
+  relation member: user
+
+  permission view = admin + member + organization -> manage
+  permission manage = admin + organization -> manage
+}
+
+definition office {
+  relation organization: organization
+  relation creator: user
+  relation admin: user
+  relation occupant: user
+
+  permission view = admin + occupant + organization -> manage
+  permission manage = admin + organization -> manage
+}

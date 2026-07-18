@@ -10,10 +10,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.jdbc.Sql;
 
-@WithMockUser
+// Authenticate as Giuseppe — a user no test mutates — so the principal resolves even after the
+// delete test removes Mario (the @Sql fixture loads once for the whole class).
+@WithUserDetails(value = "giuseppe.verdi@example.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
 @Sql(value = "/users.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
 class UserIntegrationTest extends BaseIntegrationTest {
 
