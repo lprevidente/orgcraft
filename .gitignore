@@ -8,7 +8,7 @@ target/
 **/node_modules
 npm-debug.log
 yarn-error.log
-/src/main/frontend/package-lock.json
+/src/main/frontend/node/
 
 ### STS ###
 .apt_generated

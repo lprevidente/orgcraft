@@ -21,6 +21,10 @@
     <spring-modulith.version>2.1.0</spring-modulith.version>
     <blaze-persistence.version>1.6.18</blaze-persistence.version>
     <jmolecules.version>2025.0.2</jmolecules.version>
+    <frontend.dir>${project.basedir}/src/main/frontend</frontend.dir>
+    <frontend.skip>false</frontend.skip>
+    <node.version>v22.12.0</node.version>
+    <npm.version>11.17.0</npm.version>
   </properties>
 
   <dependencies>
@@ -305,7 +309,82 @@
           </dependency>
         </dependencies>
       </plugin>
+
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.15.1</version>
+        <configuration>
+          <workingDirectory>${frontend.dir}</workingDirectory>
+          <skip>${frontend.skip}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <id>install-node-and-npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <nodeVersion>${node.version}</nodeVersion>
+              <npmVersion>${npm.version}</npmVersion>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-install</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <arguments>ci</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-build</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-frontend-build</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <skip>${frontend.skip}</skip>
+              <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${frontend.dir}/dist/frontend/browser</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>skip-frontend</id>
+      <properties>
+        <frontend.skip>true</frontend.skip>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>

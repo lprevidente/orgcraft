@@ -36,7 +36,8 @@ class SecurityConfig {
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/organizations").permitAll()
-            .anyRequest().authenticated())
+            .requestMatchers("/api/**").authenticated()
+            .anyRequest().permitAll())
         .build();
   }
 

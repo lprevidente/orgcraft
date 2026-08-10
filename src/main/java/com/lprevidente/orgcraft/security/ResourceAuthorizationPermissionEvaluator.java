@@ -3,6 +3,7 @@ package com.lprevidente.orgcraft.security;
 import com.lprevidente.orgcraft.common.authorization.ResourceAuthorization;
 import com.lprevidente.orgcraft.common.identifier.Identifier;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ class ResourceAuthorizationPermissionEvaluator implements PermissionEvaluator {
       Serializable targetId,
       String targetType,
       Object permission) {
-    if (authentication == null || targetId == null || permission == null || !(authentication.getPrincipal() instanceof UserDetailsView principal)) {
+    if (!(authentication.getPrincipal() instanceof UserDetailsView principal)) {
       return false;
     }
     final var resourceId = targetId instanceof Identifier identifier ? identifier.id().toString() : targetId.toString();
@@ -37,7 +38,7 @@ class ResourceAuthorizationPermissionEvaluator implements PermissionEvaluator {
   }
 
   @Override
-  public boolean hasPermission(Authentication authentication, Object targetDomainObject, Object permission) {
+  public boolean hasPermission(Authentication authentication, @Nullable Object targetDomainObject, Object permission) {
     throw new UnsupportedOperationException(
         "Object-based checks are unsupported; use hasPermission(#id, targetType, permission)");
   }

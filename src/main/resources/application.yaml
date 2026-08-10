@@ -25,13 +25,11 @@ spring:
   # Spring Modulith event publication registry
   modulith:
     events:
-      # Recover publications stuck in-flight (e.g. JVM killed mid-processing) by
-      # marking them FAILED so the resubmit job below can retry them.
       staleness:
-        check-intervall: 1m   # how often to scan for stale publications
-        published: 5m         # PUBLISHED rows never picked up within 5m are stale
-        processing: 5m        # PROCESSING rows not completed within 5m are stale
-        resubmitted: 5m       # RESUBMITTED rows not completed within 5m are stale
+        check-intervall: 1m
+        published: 5m
+        processing: 5m
+        resubmitted: 5m
 
 orgcraft:
   spicedb:
